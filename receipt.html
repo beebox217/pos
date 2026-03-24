@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>電子收據 / E-Receipt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .receipt-dashed { border-top: 2px dashed #e5e7eb; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="min-h-dvh flex items-start justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
+            <div class="bg-black text-white px-6 py-5">
+                <div id="receipt-title" class="font-black tracking-wider text-lg">電子收據 / E-Receipt</div>
+                <div id="receipt-subtitle" class="text-xs opacity-80 mt-1">公開連結（免登入） / Public link (No login required)</div>
+            </div>
+            <div class="p-6">
+                <div id="receipt-notice" class="text-sm text-gray-600">載入中... / Loading...</div>
+                <div id="receipt-body" class="hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">訂單編號 / Order ID</div>
+                        <div id="receipt-order-id" class="text-sm font-bold text-gray-900 break-all"></div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="text-sm text-gray-600">時間 / Date</div>
+                        <div id="receipt-time" class="text-sm font-bold text-gray-900"></div>
+                    </div>
+                    <div class="mt-4 text-xs font-black text-gray-500">明細 / Items</div>
+                    <div class="mt-4 space-y-2 text-sm text-gray-700" id="receipt-items"></div>
+                    <div class="mt-4 space-y-1 text-sm text-gray-700">
+                        <div class="flex justify-between"><span>付款方式 / Payment</span><span id="receipt-payment">-</span></div>
+                        <div class="flex justify-between"><span>小計 / Subtotal</span><span id="receipt-subtotal">$ 0</span></div>
+                        <div class="flex justify-between"><span>折扣 / Discount</span><span id="receipt-discount">$ 0</span></div>
+                        <div class="flex justify-between"><span>服務費 / Service Fee</span><span id="receipt-fee">$ 0</span></div>
+                        <div class="receipt-dashed mt-2 pt-2 flex justify-between font-black text-gray-900"><span>實收 / Total</span><span id="receipt-total">$ 0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
+            authDomain: "beebox-pos.firebaseapp.com",
+            projectId: "beebox-pos",
+            storageBucket: "beebox-pos.appspot.com",
+            messagingSenderId: "408919901374",
+            appId: "1:408919901374:web:119177a33c74a895334aef",
+            measurementId: "G-27M2GQTTY0"
+        };
+
+        const escapeHtml = (v) => String(v ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+
+        const formatOrderTime = (ts) => {
+            try {
+                const d = typeof ts?.toDate === 'function'
+                    ? ts.toDate()
+                    : (Number.isFinite(Number(ts?.seconds)) ? new Date(Number(ts.seconds) * 1000) : null);
+                if (!d) return '-';
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            } catch {
+                return '-';
+            }
+        };
+
+        const titleEl = document.getElementById('receipt-title');
+        const noticeEl = document.getElementById('receipt-notice');
+        const bodyEl = document.getElementById('receipt-body');
+        const orderIdEl = document.getElementById('receipt-order-id');
+        const timeEl = document.getElementById('receipt-time');
+        const itemsEl = document.getElementById('receipt-items');
+        const paymentEl = document.getElementById('receipt-payment');
+        const subtotalEl = document.getElementById('receipt-subtotal');
+        const discountEl = document.getElementById('receipt-discount');
+        const feeEl = document.getElementById('receipt-fee');
+        const totalEl = document.getElementById('receipt-total');
+
+        const params = new URLSearchParams(window.location.search);
+        const orderId = String(params.get('id') ?? '').trim();
+        if (!orderId) {
+            noticeEl.innerText = '缺少訂單編號，無法顯示電子收據。 / Missing Order ID.';
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            try {
+                const snap = await getDoc(doc(db, 'orders', orderId));
+                if (!snap.exists()) {
+                    noticeEl.innerText = '找不到此筆訂單，可能已被刪除或連結無效。 / Order not found.';
+                } else {
+                    const data = snap.data() ?? {};
+                    const systemName = String(data.systemName ?? '').trim();
+                    if (systemName) {
+                        titleEl.innerText = `${systemName}｜電子收據 / E-Receipt`;
+                        document.title = `${systemName}｜電子收據 / E-Receipt`;
+                    }
+
+                    orderIdEl.innerText = orderId;
+                    timeEl.innerText = formatOrderTime(data.createdAt);
+
+                    const items = Array.isArray(data.items) ? data.items : [];
+                    itemsEl.innerHTML = items.map((i) => {
+                        const name = escapeHtml(String(i?.name ?? ''));
+                        const qty = Number(i?.qty ?? 0) || 0;
+                        const price = Number(i?.price ?? 0) || 0;
+                        return `
+                            <div class="flex justify-between">
+                                <span>${name} x ${escapeHtml(qty)}</span>
+                                <span>$ ${escapeHtml(price * qty)}</span>
+                            </div>
+                        `;
+                    }).join('') || `<div class="text-gray-500">-</div>`;
+
+                    paymentEl.innerText = String(data.paymentName ?? '-') || '-';
+                    const subtotal = Number(data.subtotal ?? 0) || 0;
+                    const discount = Number(data.discountAmount ?? 0) || 0;
+                    const fee = Number(data.tax ?? 0) || 0;
+                    const total = Number(data.total ?? 0) || 0;
+
+                    subtotalEl.innerText = `$ ${subtotal}`;
+                    discountEl.innerText = discount ? `-$ ${discount}` : '$ 0';
+                    feeEl.innerText = `$ ${fee}`;
+                    totalEl.innerText = `$ ${total}`;
+
+                    noticeEl.classList.add('hidden');
+                    bodyEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                noticeEl.innerText = err?.message ?? '載入失敗，請稍後再試。 / Failed to load.';
+            }
+        }
+    </script>
+</body>
+</html>

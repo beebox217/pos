@@ -6,12 +6,26 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userRole() {
+      return get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.role;
+    }
+
+    function isManagerOrAdmin() {
+      return isSignedIn() && (userRole() in ['系統管理員', '店長']);
+    }
+
     match /accounts/{accountId} {
       allow read, write: if isSignedIn();
     }
 
     match /orders/{orderId} {
-      allow read, write: if isSignedIn();
+      allow get: if isSignedIn() || resource.data.publicReceipt == true;
+      allow list: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read, write: if isManagerOrAdmin();
     }
 
     match /categories/{categoryId} {
@@ -24,6 +38,19 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read, write: if isSignedIn();
+    }
+
+    match /discounts/{discountId} {
+      allow read, write: if isManagerOrAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if isManagerOrAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isManagerOrAdmin();
     }
 
     match /{document=**} {

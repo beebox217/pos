@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedPOS - 雲端銷售系統</title>
+    <title>0423 POS平台</title>
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="./manifest.webmanifest">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'64'%20height%3D'64'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'56'%20height%3D'56'%20rx%3D'14'%20fill%3D'%23ffffff'/%3E%3Ctext%20x%3D'32'%20y%3D'39'%20text-anchor%3D'middle'%20font-family%3D'Noto%20Sans%20TC%2C%20sans-serif'%20font-size%3D'24'%20font-weight%3D'900'%20fill%3D'%23000000'%3Ehs%3C/text%3E%3C/svg%3E">
+    <link id="app-favicon" rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'64'%20height%3D'64'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'56'%20height%3D'56'%20rx%3D'14'%20fill%3D'%23ffffff'/%3E%3Ctext%20x%3D'32'%20y%3D'39'%20text-anchor%3D'middle'%20font-family%3D'Noto%20Sans%20TC%2C%20sans-serif'%20font-size%3D'24'%20font-weight%3D'900'%20fill%3D'%23000000'%3Ehs%3C/text%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -23,11 +23,11 @@
         <!-- 導航欄 -->
         <header class="bg-black text-white p-4 shadow-md flex justify-between items-center shrink-0">
             <div class="flex items-center space-x-3">
-                <div class="bg-white text-black w-9 h-9 rounded-lg font-black flex items-center justify-center select-none overflow-hidden">
-                    <img src="./logo.svg" alt="logo" class="w-8 h-8" onerror="this.remove(); this.parentElement.querySelector('[data-fallback]').classList.remove('hidden')">
-                    <span data-fallback class="text-[12px] tracking-wide hidden">hs</span>
+                <div id="app-logo" class="bg-white text-black w-9 h-9 rounded-lg font-black flex items-center justify-center select-none overflow-hidden">
+                    <img id="app-logo-img" src="./logo.svg" alt="logo" class="w-8 h-8" onerror="this.remove(); this.parentElement.querySelector('[data-fallback]').classList.remove('hidden')">
+                    <span id="app-logo-fallback" data-fallback class="text-[12px] tracking-wide hidden">hs</span>
                 </div>
-                <h1 class="text-xl font-bold tracking-wider">0423 POS平台</h1>
+                <h1 id="app-title" class="text-xl font-bold tracking-wider">0423 POS平台</h1>
             </div>
             <div class="flex items-center gap-2">
                 <div id="auth-status" class="text-sm md:text-base bg-gray-800 px-4 py-2 rounded-full opacity-90">
@@ -115,16 +115,28 @@
                         <span id="subtotal-display">$ 0</span>
                     </div>
                     <div class="flex justify-between text-gray-500 text-sm">
-                        <span>服務費 (5%)</span>
+                        <span id="service-fee-label">服務費 (0%)</span>
                         <span id="tax-display">$ 0</span>
+                    </div>
+                    <div class="flex justify-between text-gray-500 text-sm">
+                        <span>折扣</span>
+                        <span id="discount-display">$ 0</span>
                     </div>
                     <div class="flex justify-between text-2xl font-black text-gray-900 pt-2 border-t">
                         <span>總額</span>
                         <span id="total-display">$ 0</span>
                     </div>
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <button id="orders-btn" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">
+                            訂單
+                        </button>
+                        <button id="cart-discount-btn" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">
+                            折扣
+                        </button>
+                    </div>
                     <button id="checkout-btn" disabled onclick="handleCheckout()"
                         class="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg hover:bg-gray-900 disabled:bg-gray-300 transition-all shadow-lg active:scale-95 mt-4">
-                        確認結帳並上傳雲端
+                        確認結帳
                     </button>
                 </div>
             </aside>
@@ -136,7 +148,7 @@
                 <div class="bg-black p-8 text-white text-center">
                     <div class="text-5xl mb-4">✅</div>
                     <h3 class="text-2xl font-bold">結帳成功！</h3>
-                    <p class="opacity-80 text-sm mt-2">訂單資料已同步至 Firebase</p>
+                    <p class="opacity-80 text-sm mt-2">訂單資料已同步至資料庫</p>
                 </div>
                 <div class="p-6">
                     <div id="receipt-content" class="text-sm space-y-2 text-gray-600 mb-6"></div>
@@ -145,7 +157,7 @@
             </div>
         </div>
 
-        <div id="confirm-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[70] p-4">
+        <div id="confirm-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[999] p-4">
             <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
                 <div class="bg-black text-white px-6 py-4">
                     <div id="confirm-title" class="font-black">確認動作</div>
@@ -157,6 +169,166 @@
                         <button id="confirm-ok-btn" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">確認</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="cart-discount-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[70] p-4">
+            <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">選擇折扣</div>
+                    <button id="cart-discount-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="cart-discount-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[520px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">折扣</th>
+                                        <th class="text-left font-bold px-4 py-3">狀態</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cart-discount-tbody" class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="px-4 py-10 text-center text-gray-500" colspan="3">載入中...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-3">
+                        <button id="cart-discount-clear" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">不套用折扣</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="checkout-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[70] p-4">
+            <div class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">確認結帳</div>
+                    <button id="checkout-modal-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="checkout-modal-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[45vh]">
+                            <table class="min-w-[520px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">商品圖片</th>
+                                        <th class="text-left font-bold px-4 py-3">商品</th>
+                                        <th class="text-left font-bold px-4 py-3">數量</th>
+                                        <th class="text-left font-bold px-4 py-3">小計</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="checkout-items-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white p-4 space-y-2">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>小計</span>
+                            <span id="checkout-subtotal">$ 0</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>折扣</span>
+                            <span id="checkout-discount">$ 0</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>服務費</span>
+                            <span id="checkout-service-fee">$ 0</span>
+                        </div>
+                        <div class="flex justify-between text-xl font-black text-gray-900 pt-2 border-t">
+                            <span>實收</span>
+                            <span id="checkout-total">$ 0</span>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white p-4 space-y-3">
+                        <div class="text-sm font-black text-gray-900">付款方式</div>
+                        <div id="checkout-payments" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-1">
+                        <button id="checkout-cancel-btn" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                            取消
+                        </button>
+                        <button id="checkout-confirm-btn" type="button" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            確認付款
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="orders-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[70] p-4">
+            <div class="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">付款明細</div>
+                    <button id="orders-modal-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="orders-modal-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[65vh]">
+                            <table class="min-w-[1100px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">時間</th>
+                                        <th class="text-left font-bold px-4 py-3">付款方式</th>
+                                        <th class="text-left font-bold px-4 py-3">小計</th>
+                                        <th class="text-left font-bold px-4 py-3">折扣</th>
+                                        <th class="text-left font-bold px-4 py-3">服務費</th>
+                                        <th class="text-left font-bold px-4 py-3">實收</th>
+                                        <th class="text-left font-bold px-4 py-3">明細</th>
+                                        <th class="text-left font-bold px-4 py-3">收銀人</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="order-receipt-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[80] p-4">
+            <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">電子收據 / E-Receipt</div>
+                    <button id="order-receipt-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                </div>
+                <div class="p-6 flex flex-col items-center gap-3">
+                    <div class="text-xs text-gray-500">掃描 QR code 查看電子收據 / Scan QR code to view e-receipt</div>
+                    <img id="order-receipt-qr" alt="QR code" class="w-44 h-44" src="">
+                    <a id="order-receipt-link" class="text-xs font-bold text-gray-700 underline" href="#" target="_blank" rel="noopener">開啟電子收據 / Open e-receipt</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="order-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[80] p-4">
+            <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">編輯訂單</div>
+                    <button id="order-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                </div>
+                <form id="order-editor-form" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" for="order-editor-cashier">收銀人</label>
+                        <input id="order-editor-cashier" type="text" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="<姓名>">
+                    </div>
+                    <div id="order-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                    <div class="flex items-center justify-end gap-3 pt-1">
+                        <button id="order-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">取消</button>
+                        <button id="order-editor-save" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">儲存</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -206,7 +378,7 @@
     <script type="module">
         import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, getDoc, getDocs, addDoc, serverTimestamp, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDoc, getDocs, addDoc, serverTimestamp, doc, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
@@ -219,7 +391,16 @@
         };
 
         if ('serviceWorker' in navigator) {
-            try { navigator.serviceWorker.register('./sw.js'); } catch {}
+            try {
+                navigator.serviceWorker.register('./sw.js').then((reg) => {
+                    reg.update().catch(() => { });
+                }).catch(() => { });
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (window.__swReloading) return;
+                    window.__swReloading = true;
+                    window.location.reload();
+                });
+            } catch { }
         }
         let deferredPWAInstallPrompt = null;
         const pwaBannerEl = document.getElementById('pwa-install-banner');
@@ -308,6 +489,91 @@
         let confirmResolver = null;
         let headerAccount = null;
         let profilePopoverOpen = false;
+        let appSettingsUnsub = null;
+        let appSettingsCache = { systemName: '0423 POS平台', logoDataUrl: null, serviceFeePercent: 0 };
+        let serviceFeePercent = 0;
+
+        const applyAppSettingsToUI = () => {
+            const name = String(appSettingsCache?.systemName ?? '').trim() || 'POS';
+            const logoDataUrl = String(appSettingsCache?.logoDataUrl ?? '').trim() || null;
+            const fee = Number(appSettingsCache?.serviceFeePercent ?? 0);
+            serviceFeePercent = Number.isFinite(fee) ? Math.max(0, Math.min(100, fee)) : 0;
+
+            const titleEl = document.getElementById('app-title');
+            if (titleEl) titleEl.innerText = name;
+            document.title = name;
+
+            const logoWrap = document.getElementById('app-logo');
+            const fallbackEl = document.getElementById('app-logo-fallback');
+            if (fallbackEl) fallbackEl.innerText = name.slice(0, 2);
+
+            if (logoWrap) {
+                let img = document.getElementById('app-logo-img');
+                if (!img) {
+                    img = document.createElement('img');
+                    img.id = 'app-logo-img';
+                    img.alt = 'logo';
+                    img.className = 'w-8 h-8';
+                    img.onerror = function () {
+                        this.remove();
+                        this.parentElement?.querySelector('[data-fallback]')?.classList.remove('hidden');
+                    };
+                    logoWrap.prepend(img);
+                }
+                img.src = logoDataUrl || './logo.svg';
+                if (logoDataUrl) {
+                    img.classList.remove('hidden');
+                    fallbackEl?.classList.add('hidden');
+                }
+            }
+
+            const serviceFeeLabel = document.getElementById('service-fee-label');
+            if (serviceFeeLabel) serviceFeeLabel.innerText = `服務費 (${serviceFeePercent}%)`;
+
+            if (typeof renderCart === 'function') renderCart();
+
+            const currentLogoSrc = String(document.getElementById('app-logo-img')?.getAttribute('src') ?? '').trim() || (logoDataUrl || '');
+            const initial = name.slice(0, 2);
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" rx="14" fill="#ffffff"/><text x="32" y="39" text-anchor="middle" font-family="Noto Sans TC, sans-serif" font-size="24" font-weight="900" fill="#000000">${initial}</text></svg>`;
+            const fallbackFavicon = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+            const faviconHref = currentLogoSrc || fallbackFavicon;
+            let faviconEl = document.getElementById('app-favicon');
+            if (!faviconEl) {
+                faviconEl = document.createElement('link');
+                faviconEl.id = 'app-favicon';
+                faviconEl.rel = 'icon';
+                document.head.appendChild(faviconEl);
+            }
+            faviconEl.setAttribute('href', faviconHref);
+
+            const settingsModalEl = document.getElementById('settings-modal');
+            const settingsTitleEl = document.getElementById('settings-content-title');
+            if (settingsModalEl?.style.display === 'flex' && String(settingsTitleEl?.innerText ?? '').trim() === '設定') {
+                if (typeof renderSettingsTab === 'function') renderSettingsTab();
+            }
+        };
+
+        const startAppSettingsSync = () => {
+            if (appSettingsUnsub) return;
+            appSettingsUnsub = onSnapshot(
+                doc(db, 'settings', 'app'),
+                (snapshot) => {
+                    if (!snapshot.exists()) {
+                        appSettingsCache = { systemName: '0423 POS平台', logoDataUrl: null, serviceFeePercent: 0 };
+                        applyAppSettingsToUI();
+                        return;
+                    }
+                    const data = snapshot.data() ?? {};
+                    appSettingsCache = {
+                        systemName: String(data.systemName ?? '0423 POS平台'),
+                        logoDataUrl: String(data.logoDataUrl ?? '').trim() || null,
+                        serviceFeePercent: Number.isFinite(Number(data.serviceFeePercent)) ? Number(data.serviceFeePercent) : 0
+                    };
+                    applyAppSettingsToUI();
+                },
+                () => { }
+            );
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -319,6 +585,7 @@
             startCategoriesListSync();
             startProductsListSync();
             startBrandsListSync();
+            startAppSettingsSync();
 
             (async () => {
                 try {
@@ -342,6 +609,23 @@
                 const fallbackName = user.displayName || (user.email ? user.email.split('@')[0] : `ID:${user.uid.substring(0, 6)}`);
                 setAuthStatus({ name: fallbackName || '使用者', avatarDataUrl: user.photoURL || null });
                 headerAccount = { id: user.uid, name: fallbackName || '使用者', role: '店員', avatarDataUrl: user.photoURL || null };
+                try {
+                    const name = String(fallbackName || '使用者');
+                    await setDoc(
+                        doc(db, 'accounts', user.uid),
+                        {
+                            name,
+                            role: '店員',
+                            avatarDataUrl: user.photoURL || null,
+                            email: user.email ?? null,
+                            createdAt: serverTimestamp(),
+                            createdBy: user.uid,
+                            updatedAt: serverTimestamp(),
+                            updatedBy: user.uid
+                        },
+                        { merge: true }
+                    );
+                } catch { }
                 const role = getCurrentRole();
                 if (role === '店員') {
                     settingsBtn.style.display = 'none';
@@ -569,6 +853,9 @@
             document.body.style.overflow = '';
             unmountAccountsTab();
             unmountCategoriesTab();
+            unmountPurchasesTab();
+            unmountDiscountsTab();
+            unmountPaymentsTab();
         };
 
         const escapeHtml = (value) => {
@@ -578,6 +865,91 @@
                 .replaceAll('>', '&gt;')
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#39;');
+        };
+
+        const toSafeInt = (v) => {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return 0;
+            return Math.floor(n);
+        };
+
+        const buildQtyMapFromItems = (items) => {
+            const map = new Map();
+            (Array.isArray(items) ? items : []).forEach((it) => {
+                const rawKey = it?.productDocId ?? it?.docId ?? it?.productId ?? it?.id ?? null;
+                if (rawKey == null) return;
+                const qty = Math.max(0, toSafeInt(it?.qty ?? it?.quantity ?? 0));
+                if (!qty) return;
+                const key = String(rawKey);
+                map.set(key, (map.get(key) ?? 0) + qty);
+            });
+            return map;
+        };
+
+        const buildQtyMapFromPurchaseItems = (items) => {
+            const map = new Map();
+            (Array.isArray(items) ? items : []).forEach((it) => {
+                const rawKey = it?.productDocId ?? it?.docId ?? it?.productId ?? it?.id ?? null;
+                if (rawKey == null) return;
+                const qty = Math.max(0, toSafeInt(it?.qty ?? it?.quantity ?? 0));
+                if (!qty) return;
+                const key = String(rawKey);
+                map.set(key, (map.get(key) ?? 0) + qty);
+            });
+            return map;
+        };
+
+        const applyProductStockDeltasTx = async (tx, deltasByProductId) => {
+            const entries = Array.from((deltasByProductId instanceof Map ? deltasByProductId : new Map()).entries())
+                .map(([k, v]) => [String(k), Number(v)])
+                .filter(([, v]) => Number.isFinite(v) && v !== 0);
+            if (entries.length === 0) return;
+
+            const requests = entries.map(([pid, delta]) => {
+                const primaryRef = doc(db, 'products', pid);
+                const alt = (Array.isArray(PRODUCTS) ? PRODUCTS : []).find((p) => String(p?.id ?? '') === pid) ?? null;
+                const altDocId = alt?.docId != null ? String(alt.docId) : '';
+                const altRef = altDocId && altDocId !== pid ? doc(db, 'products', altDocId) : null;
+                return { pid, delta, primaryRef, altRef };
+            });
+
+            const resolved = [];
+            for (const req of requests) {
+                let ref = req.primaryRef;
+                let snap = await tx.get(ref);
+                if (!snap.exists() && req.altRef) {
+                    ref = req.altRef;
+                    snap = await tx.get(ref);
+                }
+                if (!snap.exists()) throw new Error(`找不到商品（${req.pid}）`);
+                resolved.push({ pid: req.pid, delta: req.delta, ref, data: snap.data() ?? {} });
+            }
+
+            for (const item of resolved) {
+                const cur = Number.isFinite(Number(item.data.stock)) ? Number(item.data.stock) : 0;
+                const next = cur + item.delta;
+                if (next < 0) {
+                    const name = String(item.data.name ?? '').trim();
+                    throw new Error(`庫存不足：${name || item.pid}`);
+                }
+                tx.update(item.ref, { stock: next, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null });
+            }
+        };
+
+        const deleteOrderWithStockAdjust = async (orderId) => {
+            const id = String(orderId ?? '').trim();
+            if (!id) return;
+            const orderRef = doc(db, 'orders', id);
+            await runTransaction(db, async (tx) => {
+                const snap = await tx.get(orderRef);
+                if (!snap.exists()) return;
+                const order = snap.data() ?? {};
+                const items = Array.isArray(order.items) ? order.items : [];
+                const qtyByPid = buildQtyMapFromItems(items);
+                const deltas = new Map(Array.from(qtyByPid.entries()).map(([pid, qty]) => [pid, Math.abs(toSafeInt(qty))]));
+                await applyProductStockDeltasTx(tx, deltas);
+                tx.delete(orderRef);
+            });
         };
 
         function startCategoriesListSync() {
@@ -630,6 +1002,8 @@
         let editingAccountId = null;
         let seededDefaultAccount = false;
         let accountsPermissionDenied = false;
+        let purchasesUnsub = null;
+        let purchasesCache = [];
         let categoriesUnsub = null;
         let categoriesListUnsub = null;
         let categoriesCache = [];
@@ -644,9 +1018,1041 @@
         let brandEditorMode = 'create';
         let editingBrandId = null;
         let seededDefaultBrands = false;
+        let discountsUnsub = null;
+        let discountsCache = [];
+        let discountEditorMode = 'create';
+        let editingDiscountId = null;
+        let paymentsUnsub = null;
+        let paymentsCache = [];
+        let paymentEditorMode = 'create';
+        let editingPaymentId = null;
+        let seededDefaultPayments = false;
 
         const renderPlaceholder = (tab) => {
             settingsContentEl.innerHTML = `<div class="text-sm text-gray-700 mt-2 leading-relaxed">此功能尚未建置。</div>`;
+        };
+
+        const renderSettingsTab = () => {
+            const name = String(appSettingsCache?.systemName ?? '').trim() || 'POS';
+            const logoDataUrl = String(appSettingsCache?.logoDataUrl ?? '').trim() || '';
+            const fee = Number.isFinite(Number(appSettingsCache?.serviceFeePercent)) ? Number(appSettingsCache?.serviceFeePercent) : 0;
+            const safeFee = Math.max(0, Math.min(100, fee));
+            const fallbackText = name.slice(0, 2);
+            const currentHeaderLogo = String(document.getElementById('app-logo-img')?.getAttribute('src') ?? '').trim();
+            const effectiveLogoSrc = currentHeaderLogo || logoDataUrl || './logo.svg';
+
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="text-sm text-gray-600">系統資訊設定</div>
+                    <div id="app-settings-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white p-6 space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                            <div class="font-black text-gray-900">系統名稱</div>
+                            <div class="sm:col-span-2 flex flex-col sm:flex-row gap-3">
+                                <input id="app-settings-name" type="text" class="flex-1 px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" value="${escapeHtml(name)}">
+                                <button id="app-settings-name-save" type="button" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                    儲存名稱
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                            <div class="font-black text-gray-900">LOGO</div>
+                            <div class="sm:col-span-2">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                                        <img id="app-settings-logo-preview" src="${escapeHtml(effectiveLogoSrc)}" alt="logo" class="w-full h-full object-cover" onerror="this.remove(); this.parentElement.querySelector('[data-fallback]')?.classList.remove('hidden')">
+                                        <span id="app-settings-logo-fallback" data-fallback class="font-black text-gray-900 hidden">${escapeHtml(fallbackText)}</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0 space-y-2">
+                                        <input id="app-settings-logo-file" type="file" accept="image/*" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:bg-gray-100 file:text-gray-900 file:font-bold hover:file:bg-gray-200 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <button id="app-settings-logo-save" type="button" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors text-sm">
+                                                儲存 LOGO
+                                            </button>
+                                            <button id="app-settings-logo-reset" type="button" class="px-4 py-2 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">
+                                                還原預設
+                                            </button>
+                                        </div>
+                                        <input id="app-settings-logo-data" type="hidden" value="${escapeHtml(logoDataUrl)}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white p-6 space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="font-black text-gray-900">服務費 (%)</div>
+                            <div class="text-xs text-gray-500">預設 0%</div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input id="app-settings-fee" type="number" min="0" max="100" step="1" class="flex-1 px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" value="${escapeHtml(safeFee)}">
+                            <button id="app-settings-fee-save" type="button" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                儲存服務費
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const noticeEl = document.getElementById('app-settings-notice');
+            const showNotice = (msg) => {
+                if (!noticeEl) return;
+                noticeEl.classList.remove('hidden');
+                noticeEl.innerText = msg;
+            };
+            const hideNotice = () => {
+                if (!noticeEl) return;
+                noticeEl.classList.add('hidden');
+                noticeEl.innerText = '';
+            };
+
+            const nameEl = document.getElementById('app-settings-name');
+            const nameSaveBtn = document.getElementById('app-settings-name-save');
+            const logoFileEl = document.getElementById('app-settings-logo-file');
+            const logoSaveBtn = document.getElementById('app-settings-logo-save');
+            const logoResetBtn = document.getElementById('app-settings-logo-reset');
+            const logoDataEl = document.getElementById('app-settings-logo-data');
+            const logoPreviewEl = document.getElementById('app-settings-logo-preview');
+            const logoFallbackEl = document.getElementById('app-settings-logo-fallback');
+            const feeEl = document.getElementById('app-settings-fee');
+            const feeSaveBtn = document.getElementById('app-settings-fee-save');
+
+            const setLogoPreview = (dataUrl) => {
+                const v = String(dataUrl ?? '').trim();
+                if (logoDataEl) logoDataEl.value = v;
+                if (logoPreviewEl) {
+                    logoPreviewEl.src = v || './logo.svg';
+                    logoPreviewEl.classList.remove('hidden');
+                    logoFallbackEl?.classList.add('hidden');
+                }
+            };
+
+            if (logoFileEl) {
+                logoFileEl.addEventListener('change', async () => {
+                    hideNotice();
+                    const file = logoFileEl.files?.[0] ?? null;
+                    if (!file) return;
+                    try {
+                        const dataUrl = await resizeImageToDataUrl(file);
+                        setLogoPreview(dataUrl);
+                    } catch (err) {
+                        showNotice(err?.message ?? '讀取圖片失敗');
+                    }
+                });
+            }
+
+            nameSaveBtn?.addEventListener('click', async () => {
+                hideNotice();
+                const v = String(nameEl?.value ?? '').trim();
+                if (!v) {
+                    showNotice('請輸入系統名稱。');
+                    return;
+                }
+                nameSaveBtn.disabled = true;
+                nameSaveBtn.classList.add('opacity-70');
+                try {
+                    await setDoc(doc(db, 'settings', 'app'), { systemName: v, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null }, { merge: true });
+                    showNotice('已更新系統名稱。');
+                } catch (err) {
+                    showNotice(err?.message ?? '儲存失敗，請稍後再試。');
+                } finally {
+                    nameSaveBtn.disabled = false;
+                    nameSaveBtn.classList.remove('opacity-70');
+                }
+            });
+
+            logoSaveBtn?.addEventListener('click', async () => {
+                hideNotice();
+                const v = String(logoDataEl?.value ?? '').trim();
+                if (!v) {
+                    showNotice('請先選擇圖片，或按「還原預設」。');
+                    return;
+                }
+                logoSaveBtn.disabled = true;
+                logoSaveBtn.classList.add('opacity-70');
+                try {
+                    await setDoc(doc(db, 'settings', 'app'), { logoDataUrl: v, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null }, { merge: true });
+                    showNotice('已更新 LOGO。');
+                } catch (err) {
+                    showNotice(err?.message ?? '儲存失敗，請稍後再試。');
+                } finally {
+                    logoSaveBtn.disabled = false;
+                    logoSaveBtn.classList.remove('opacity-70');
+                }
+            });
+
+            logoResetBtn?.addEventListener('click', async () => {
+                hideNotice();
+                setLogoPreview('');
+                logoResetBtn.disabled = true;
+                logoResetBtn.classList.add('opacity-70');
+                try {
+                    await setDoc(doc(db, 'settings', 'app'), { logoDataUrl: null, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null }, { merge: true });
+                    showNotice('已還原為預設 LOGO。');
+                } catch (err) {
+                    showNotice(err?.message ?? '儲存失敗，請稍後再試。');
+                } finally {
+                    logoResetBtn.disabled = false;
+                    logoResetBtn.classList.remove('opacity-70');
+                }
+            });
+
+            feeSaveBtn?.addEventListener('click', async () => {
+                hideNotice();
+                const raw = Number(feeEl?.value ?? '');
+                if (!Number.isFinite(raw) || raw < 0 || raw > 100) {
+                    showNotice('服務費請輸入 0 ~ 100 的數值。');
+                    return;
+                }
+                const v = Math.round(raw);
+                feeSaveBtn.disabled = true;
+                feeSaveBtn.classList.add('opacity-70');
+                try {
+                    await setDoc(doc(db, 'settings', 'app'), { serviceFeePercent: v, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null }, { merge: true });
+                    showNotice('已更新服務費設定。');
+                } catch (err) {
+                    showNotice(err?.message ?? '儲存失敗，請稍後再試。');
+                } finally {
+                    feeSaveBtn.disabled = false;
+                    feeSaveBtn.classList.remove('opacity-70');
+                }
+            });
+        };
+
+        const renderPaymentsTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">管理金流設定</div>
+                        <button id="payment-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增金流
+                        </button>
+                    </div>
+
+                    <div id="payments-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">金流</th>
+                                        <th class="text-left font-bold px-4 py-3">狀態</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payments-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="payment-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="payment-editor-title" class="font-black tracking-wider">新增金流</div>
+                                <button id="payment-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="payment-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="payment-name">金流名稱</label>
+                                        <input id="payment-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="例如：信用卡、LINE Pay">
+                                    </div>
+                                    <div class="sm:col-span-2 flex items-center gap-3">
+                                        <input id="payment-active" type="checkbox" class="w-5 h-5 rounded border-gray-300" checked>
+                                        <label class="text-sm font-bold text-gray-700" for="payment-active">啟用</label>
+                                    </div>
+                                </div>
+
+                                <div id="payment-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="payment-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="payment-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const addBtn = document.getElementById('payment-add-btn');
+            const noticeEl = document.getElementById('payments-notice');
+            const tbody = document.getElementById('payments-tbody');
+            const editorModal = document.getElementById('payment-editor-modal');
+            const editorTitle = document.getElementById('payment-editor-title');
+            const editorClose = document.getElementById('payment-editor-close');
+            const editorCancel = document.getElementById('payment-editor-cancel');
+            const editorForm = document.getElementById('payment-editor-form');
+            const editorError = document.getElementById('payment-editor-error');
+            const nameEl = document.getElementById('payment-name');
+            const activeEl = document.getElementById('payment-active');
+            const submitEl = document.getElementById('payment-editor-submit');
+
+            const showNotice = (msg) => {
+                if (!noticeEl) return;
+                noticeEl.classList.remove('hidden');
+                noticeEl.innerText = msg;
+            };
+            const hideNotice = () => {
+                if (!noticeEl) return;
+                noticeEl.classList.add('hidden');
+                noticeEl.innerText = '';
+            };
+
+            const openEditor = (mode, id) => {
+                paymentEditorMode = mode;
+                editingPaymentId = id ?? null;
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+
+                if (mode === 'edit' && id) {
+                    const p = paymentsCache.find((x) => x.id === id) ?? null;
+                    editorTitle.innerText = '編輯金流';
+                    nameEl.value = String(p?.name ?? '');
+                    activeEl.checked = Boolean(p?.active ?? true);
+                } else {
+                    editorTitle.innerText = '新增金流';
+                    nameEl.value = '';
+                    activeEl.checked = true;
+                }
+
+                editorModal.style.display = 'flex';
+                nameEl.focus();
+            };
+
+            const closeEditor = () => {
+                editorModal.style.display = 'none';
+            };
+
+            const renderRows = () => {
+                const list = [...(Array.isArray(paymentsCache) ? paymentsCache : [])].sort((a, b) => {
+                    const an = String(a?.name ?? '');
+                    const bn = String(b?.name ?? '');
+                    return an.localeCompare(bn, 'zh-Hant');
+                });
+                const rows = list.map((p) => {
+                    const label = escapeHtml(String(p?.name ?? '').trim());
+                    const active = Boolean(p?.active ?? true);
+                    const status = active
+                        ? '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-black text-white">啟用</span>'
+                        : '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-700 border border-gray-200">停用</span>';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">${label}</td>
+                            <td class="px-4 py-3">${status}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${escapeHtml(p.id)}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${escapeHtml(p.id)}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                tbody.innerHTML = rows || `
+                    <tr>
+                        <td class="px-4 py-10 text-center text-gray-500" colspan="3">目前沒有金流資料，請先新增。</td>
+                    </tr>
+                `;
+            };
+
+            addBtn?.addEventListener('click', () => openEditor('create'));
+            editorClose?.addEventListener('click', closeEditor);
+            editorCancel?.addEventListener('click', closeEditor);
+            editorModal?.addEventListener('click', (e) => { if (e.target === editorModal) closeEditor(); });
+
+            tbody?.addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('[data-action="edit"]');
+                const deleteBtn = e.target.closest('[data-action="delete"]');
+                if (!editBtn && !deleteBtn) return;
+                const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+                if (!id) return;
+
+                if (editBtn) {
+                    openEditor('edit', id);
+                    return;
+                }
+
+                const list = Array.isArray(paymentsCache) ? paymentsCache : [];
+                if (list.length <= 1) {
+                    showNotice('至少需保留一種金流方式。');
+                    return;
+                }
+                const p = list.find((x) => x.id === id);
+                const label = p?.name ?? id;
+                const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除金流：${label}？`, okText: '確認', cancelText: '取消' });
+                if (!ok) return;
+                await deleteDoc(doc(db, 'payments', id));
+            });
+
+            editorForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+                hideNotice();
+
+                const name = nameEl.value.trim();
+                const active = Boolean(activeEl.checked);
+                if (!name) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '請輸入金流名稱。';
+                    return;
+                }
+                const normalized = name.toLowerCase();
+                const conflict = paymentsCache.some((p) => {
+                    const other = String(p.name ?? '').trim().toLowerCase();
+                    if (paymentEditorMode === 'edit' && p.id === editingPaymentId) return false;
+                    return other === normalized;
+                });
+                if (conflict) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '此金流名稱已存在。';
+                    return;
+                }
+
+                submitEl.disabled = true;
+                submitEl.classList.add('opacity-70');
+                const prevText = submitEl.innerText;
+                submitEl.innerText = '儲存中...';
+                try {
+                    const payload = { name, active, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null };
+                    if (paymentEditorMode === 'edit' && editingPaymentId) {
+                        await updateDoc(doc(db, 'payments', editingPaymentId), payload);
+                    } else {
+                        const id = crypto.randomUUID();
+                        await setDoc(doc(db, 'payments', id), { ...payload, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null });
+                    }
+                    closeEditor();
+                } catch (err) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                } finally {
+                    submitEl.disabled = false;
+                    submitEl.classList.remove('opacity-70');
+                    submitEl.innerText = prevText;
+                }
+            });
+
+            renderRows();
+
+            if (!paymentsUnsub) {
+                paymentsUnsub = onSnapshot(
+                    collection(db, 'payments'),
+                    async (snapshot) => {
+                        hideNotice();
+                        paymentsCache = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+
+                        if (paymentsCache.length === 0 && !seededDefaultPayments) {
+                            seededDefaultPayments = true;
+                            paymentsCache = [{ id: 'seed-現金', name: '現金', active: true }];
+                            renderRows();
+                            try {
+                                const id = crypto.randomUUID();
+                                await setDoc(doc(db, 'payments', id), { name: '現金', active: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), createdBy: currentUser?.uid ?? null, updatedBy: currentUser?.uid ?? null });
+                            } catch {
+                                seededDefaultPayments = false;
+                            }
+                        }
+
+                        renderRows();
+                    },
+                    (error) => {
+                        paymentsCache = [];
+                        showNotice(`無法讀取金流資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`);
+                        renderRows();
+                    }
+                );
+            }
+        };
+
+        const renderAccountingTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="text-sm text-gray-600">帳務統計</div>
+                    <div id="accounting-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="rounded-3xl border border-gray-200 bg-white p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="font-black text-gray-900">收入</div>
+                                <div class="text-sm font-black text-gray-900">加總：<span id="accounting-income-total">$ 0</span></div>
+                            </div>
+                            <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                                <div class="overflow-auto max-h-[60vh] lg:max-h-[65vh]">
+                                    <table class="min-w-[520px] w-full text-sm">
+                                        <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                            <tr>
+                                                <th class="text-left font-bold px-4 py-3">金流</th>
+                                                <th class="text-left font-bold px-4 py-3">收入</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="accounting-income-tbody" class="divide-y divide-gray-100">
+                                            <tr><td class="px-4 py-10 text-center text-gray-500" colspan="2">載入中...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-3xl border border-gray-200 bg-white p-6 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="font-black text-gray-900">支出</div>
+                                <div class="text-sm font-black text-gray-900">加總：<span id="accounting-expense-total">$ 0</span></div>
+                            </div>
+                            <div class="text-sm text-gray-600">進貨總額</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const noticeEl = document.getElementById('accounting-notice');
+            const incomeTbody = document.getElementById('accounting-income-tbody');
+            const incomeTotalEl = document.getElementById('accounting-income-total');
+            const expenseTotalEl = document.getElementById('accounting-expense-total');
+
+            const showNotice = (msg) => {
+                if (!noticeEl) return;
+                noticeEl.classList.remove('hidden');
+                noticeEl.innerText = msg;
+            };
+            const hideNotice = () => {
+                if (!noticeEl) return;
+                noticeEl.classList.add('hidden');
+                noticeEl.innerText = '';
+            };
+
+            const normalizeKey = (s) => String(s ?? '').trim().toLowerCase();
+            const safeNumber = (v) => {
+                const n = Number(v);
+                return Number.isFinite(n) ? n : 0;
+            };
+
+            const calcPurchaseTotal = (purchase) => {
+                const items = Array.isArray(purchase?.items) ? purchase.items : [];
+                return items.reduce((sum, it) => {
+                    const subtotal = it?.subtotal != null ? Number(it.subtotal) : null;
+                    if (subtotal != null && Number.isFinite(subtotal)) return sum + subtotal;
+                    const cost = it?.costPrice != null ? Number(it.costPrice) : 0;
+                    const qty = it?.qty != null ? Number(it.qty) : 0;
+                    if (!Number.isFinite(cost) || !Number.isFinite(qty)) return sum;
+                    return sum + cost * qty;
+                }, 0);
+            };
+
+            const renderIncomeRows = ({ payments, byId, byName, noPaymentTotal }) => {
+                if (!incomeTbody) return;
+                const rows = [];
+                const usedName = new Set();
+                const sortedPayments = [...(Array.isArray(payments) ? payments : [])].sort((a, b) => {
+                    const an = String(a?.name ?? '');
+                    const bn = String(b?.name ?? '');
+                    return an.localeCompare(bn, 'zh-Hant');
+                });
+
+                sortedPayments.forEach((p) => {
+                    const id = String(p?.id ?? '');
+                    const name = String(p?.name ?? '').trim() || '-';
+                    const key = normalizeKey(name);
+                    usedName.add(key);
+                    const amount = safeNumber(byId.get(id)) + safeNumber(byName.get(key));
+                    rows.push(`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">${escapeHtml(name)}</td>
+                            <td class="px-4 py-3 font-black text-gray-900">$ ${escapeHtml(String(Math.round(amount)))}</td>
+                        </tr>
+                    `);
+                });
+
+                Array.from(byName.entries())
+                    .filter(([k, v]) => !usedName.has(k) && safeNumber(v) > 0)
+                    .sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'zh-Hant'))
+                    .forEach(([k, v]) => {
+                        rows.push(`
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 font-bold text-gray-900">${escapeHtml(k || '-')}</td>
+                                <td class="px-4 py-3 font-black text-gray-900">$ ${escapeHtml(String(Math.round(safeNumber(v))))}</td>
+                            </tr>
+                        `);
+                    });
+
+                if (safeNumber(noPaymentTotal) > 0) {
+                    rows.push(`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">其他</td>
+                            <td class="px-4 py-3 font-black text-gray-900">$ ${escapeHtml(String(Math.round(safeNumber(noPaymentTotal))))}</td>
+                        </tr>
+                    `);
+                }
+
+                incomeTbody.innerHTML = rows.join('') || `
+                    <tr>
+                        <td class="px-4 py-10 text-center text-gray-500" colspan="2">目前沒有收入資料。</td>
+                    </tr>
+                `;
+            };
+
+            const load = async () => {
+                hideNotice();
+                if (incomeTbody) incomeTbody.innerHTML = `<tr><td class="px-4 py-10 text-center text-gray-500" colspan="2">載入中...</td></tr>`;
+                if (incomeTotalEl) incomeTotalEl.innerText = '$ 0';
+                if (expenseTotalEl) expenseTotalEl.innerText = '$ 0';
+
+                let payments = [];
+                try {
+                    const snap = await getDocs(collection(db, 'payments'));
+                    payments = snap.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                } catch { }
+
+                let incomeTotal = 0;
+                const byId = new Map();
+                const byName = new Map();
+                let noPaymentTotal = 0;
+                try {
+                    const snap = await getDocs(collection(db, 'orders'));
+                    snap.docs.forEach((d) => {
+                        const o = d.data() ?? {};
+                        const total = safeNumber(o?.total);
+                        incomeTotal += total;
+                        const pid = String(o?.paymentId ?? '').trim();
+                        if (pid) {
+                            byId.set(pid, safeNumber(byId.get(pid)) + total);
+                            const pname = normalizeKey(o?.paymentName);
+                            if (pname) byName.set(pname, safeNumber(byName.get(pname)) + 0);
+                            return;
+                        }
+                        const pname = normalizeKey(o?.paymentName);
+                        if (pname) {
+                            byName.set(pname, safeNumber(byName.get(pname)) + total);
+                            return;
+                        }
+                        noPaymentTotal += total;
+                    });
+                } catch (err) {
+                    showNotice(err?.message ?? '無法讀取訂單資料。');
+                }
+
+                renderIncomeRows({ payments, byId, byName, noPaymentTotal });
+                if (incomeTotalEl) incomeTotalEl.innerText = `$ ${escapeHtml(String(Math.round(incomeTotal)))}`;
+
+                let expenseTotal = 0;
+                try {
+                    const snap = await getDocs(collection(db, 'purchases'));
+                    snap.docs.forEach((d) => {
+                        expenseTotal += safeNumber(calcPurchaseTotal(d.data() ?? {}));
+                    });
+                    if (expenseTotalEl) expenseTotalEl.innerText = `$ ${escapeHtml(String(Math.round(expenseTotal)))}`;
+                } catch (err) {
+                    if (expenseTotalEl) expenseTotalEl.innerText = '$ 0';
+                    const code = String(err?.code ?? '');
+                    if (code.includes('permission-denied')) {
+                        showNotice('無法讀取支出資料：權限不足。');
+                    } else {
+                        showNotice(err?.message ?? '無法讀取支出資料。');
+                    }
+                }
+            };
+
+            load();
+        };
+
+        const renderOrdersTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div id="settings-orders-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[65vh]">
+                            <table class="min-w-[1100px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">時間</th>
+                                        <th class="text-left font-bold px-4 py-3">付款方式</th>
+                                        <th class="text-left font-bold px-4 py-3">小計</th>
+                                        <th class="text-left font-bold px-4 py-3">折扣</th>
+                                        <th class="text-left font-bold px-4 py-3">服務費</th>
+                                        <th class="text-left font-bold px-4 py-3">實收</th>
+                                        <th class="text-left font-bold px-4 py-3">明細</th>
+                                        <th class="text-left font-bold px-4 py-3">收銀人</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="settings-orders-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const noticeEl = document.getElementById('settings-orders-notice');
+            const tbody = document.getElementById('settings-orders-tbody');
+
+            const showNotice = (msg) => {
+                if (!noticeEl) return;
+                noticeEl.classList.remove('hidden');
+                noticeEl.innerText = msg;
+            };
+            const hideNotice = () => {
+                if (!noticeEl) return;
+                noticeEl.classList.add('hidden');
+                noticeEl.innerText = '';
+            };
+
+            const render = (orders) => {
+                renderOrdersRows(orders, tbody);
+            };
+
+            const reload = async () => {
+                hideNotice();
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td class="px-4 py-10 text-center text-gray-500" colspan="9">載入中...</td>
+                        </tr>
+                    `;
+                }
+                try {
+                    const snap = await getDocs(collection(db, 'orders'));
+                    const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                    list.sort((a, b) => {
+                        const at = a?.createdAt?.seconds ?? 0;
+                        const bt = b?.createdAt?.seconds ?? 0;
+                        if (at !== bt) return bt - at;
+                        return String(b?.id ?? '').localeCompare(String(a?.id ?? ''));
+                    });
+                    ordersListCache = list;
+                    render(list);
+                } catch (err) {
+                    ordersListCache = [];
+                    render([]);
+                    showNotice(err?.message ?? '無法讀取付款明細。');
+                }
+            };
+
+            tbody?.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('[data-action="toggle-order"]');
+                if (toggleBtn) {
+                    const id = toggleBtn.getAttribute('data-id');
+                    if (!id) return;
+                    const row = tbody.querySelector(`tr[data-detail="${CSS.escape(id)}"]`);
+                    if (!row) return;
+                    const nowHidden = row.classList.toggle('hidden');
+                    toggleBtn.innerText = nowHidden ? '查看' : '收起';
+                    return;
+                }
+                const receiptBtn = e.target.closest('[data-action="receipt-order"]');
+                if (receiptBtn) {
+                    const id = receiptBtn.getAttribute('data-id');
+                    if (!id) return;
+                    openOrderReceiptModal(id);
+                    return;
+                }
+                const editBtn = e.target.closest('[data-action="edit-order"]');
+                if (editBtn) {
+                    const id = editBtn.getAttribute('data-id');
+                    if (!id) return;
+                    openOrderEditorModal(id);
+                    return;
+                }
+                const deleteBtn = e.target.closest('[data-action="delete-order"]');
+                if (deleteBtn) {
+                    const id = deleteBtn.getAttribute('data-id');
+                    if (!id) return;
+                    (async () => {
+                        const target = ordersListCache.find((o) => String(o?.id ?? '') === String(id)) ?? null;
+                        const time = target ? formatOrderTime(target?.createdAt) : '-';
+                        const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除這筆訂單？（${time}）`, okText: '確認', cancelText: '取消' });
+                        if (!ok) return;
+                        try {
+                            await deleteOrderWithStockAdjust(id);
+                            await reload();
+                        } catch (err) {
+                            showNotice(err?.message ?? '刪除失敗，請稍後再試。');
+                        }
+                    })();
+                    return;
+                }
+            });
+
+            reload();
+        };
+
+        const renderDiscountsTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">管理折扣</div>
+                        <button id="discount-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增折扣
+                        </button>
+                    </div>
+
+                    <div id="discounts-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">折扣</th>
+                                        <th class="text-left font-bold px-4 py-3">適用</th>
+                                        <th class="text-left font-bold px-4 py-3">狀態</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="discounts-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="discount-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="discount-editor-title" class="font-black tracking-wider">新增折扣</div>
+                                <button id="discount-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="discount-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="discount-name">折扣名稱</label>
+                                        <input id="discount-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="例如：全館 9 折">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="discount-type">折扣類型</label>
+                                        <select id="discount-type" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                            <option value="percent">百分比（%）</option>
+                                            <option value="amount">固定金額（$）</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="discount-value">折扣數值</label>
+                                        <input id="discount-value" type="number" min="0" step="1" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="例如：10">
+                                    </div>
+                                    <div class="sm:col-span-2 flex items-center gap-3">
+                                        <input id="discount-active" type="checkbox" class="w-5 h-5 rounded border-gray-300">
+                                        <label class="text-sm font-bold text-gray-700" for="discount-active">啟用</label>
+                                    </div>
+                                </div>
+
+                                <div id="discount-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="discount-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="discount-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const addBtn = document.getElementById('discount-add-btn');
+            const noticeEl = document.getElementById('discounts-notice');
+            const tbody = document.getElementById('discounts-tbody');
+            const editorModal = document.getElementById('discount-editor-modal');
+            const editorTitle = document.getElementById('discount-editor-title');
+            const editorClose = document.getElementById('discount-editor-close');
+            const editorCancel = document.getElementById('discount-editor-cancel');
+            const editorForm = document.getElementById('discount-editor-form');
+            const editorError = document.getElementById('discount-editor-error');
+            const nameEl = document.getElementById('discount-name');
+            const typeEl = document.getElementById('discount-type');
+            const valueEl = document.getElementById('discount-value');
+            const activeEl = document.getElementById('discount-active');
+            const submitEl = document.getElementById('discount-editor-submit');
+
+            const closeEditor = () => { if (editorModal) editorModal.style.display = 'none'; };
+
+            const openEditor = (mode, id) => {
+                discountEditorMode = mode;
+                editingDiscountId = id ?? null;
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+
+                if (mode === 'edit' && id) {
+                    const d = discountsCache.find(x => x.id === id) ?? null;
+                    editorTitle.innerText = '編輯折扣';
+                    if (!d) {
+                        editorError.classList.remove('hidden');
+                        editorError.innerText = '找不到要編輯的折扣。';
+                        return;
+                    }
+                    nameEl.value = String(d.name ?? '');
+                    typeEl.value = String(d.type ?? 'percent');
+                    valueEl.value = d.value != null ? Number(d.value) : '';
+                    activeEl.checked = Boolean(d.active ?? true);
+                } else {
+                    editorTitle.innerText = '新增折扣';
+                    nameEl.value = '';
+                    typeEl.value = 'percent';
+                    valueEl.value = '';
+                    activeEl.checked = true;
+                }
+
+                editorModal.style.display = 'flex';
+                nameEl.focus();
+            };
+
+            const formatDiscount = (d) => {
+                const name = String(d?.name ?? '').trim();
+                const type = String(d?.type ?? 'percent');
+                const value = Number(d?.value ?? 0) || 0;
+                if (type === 'amount') return `${name}（$ ${value}）`;
+                return `${name}（${value}%）`;
+            };
+
+            const formatScope = (d) => {
+                return '全部商品';
+            };
+
+            const renderRows = () => {
+                if (!tbody) return;
+                const list = [...(Array.isArray(discountsCache) ? discountsCache : [])].sort((a, b) => {
+                    const at = a?.createdAt?.seconds ?? 0;
+                    const bt = b?.createdAt?.seconds ?? 0;
+                    if (at !== bt) return bt - at;
+                    return String(b?.id ?? '').localeCompare(String(a?.id ?? ''));
+                });
+                const rows = list.map((d) => {
+                    const label = escapeHtml(formatDiscount(d));
+                    const scope = escapeHtml(formatScope(d));
+                    const active = Boolean(d.active ?? true);
+                    const status = active
+                        ? '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-black text-white">啟用</span>'
+                        : '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-700 border border-gray-200">停用</span>';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">${label}</td>
+                            <td class="px-4 py-3 text-gray-900">${scope}</td>
+                            <td class="px-4 py-3">${status}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${escapeHtml(d.id)}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${escapeHtml(d.id)}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                tbody.innerHTML = rows || `
+                    <tr>
+                        <td class="px-4 py-10 text-center text-gray-500" colspan="4">目前沒有折扣資料，請先新增。</td>
+                    </tr>
+                `;
+            };
+
+            addBtn?.addEventListener('click', () => openEditor('create'));
+            editorClose?.addEventListener('click', closeEditor);
+            editorCancel?.addEventListener('click', closeEditor);
+            editorModal?.addEventListener('click', (e) => { if (e.target === editorModal) closeEditor(); });
+
+            tbody?.addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('[data-action="edit"]');
+                const deleteBtn = e.target.closest('[data-action="delete"]');
+                if (!editBtn && !deleteBtn) return;
+                const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+                if (!id) return;
+                if (editBtn) {
+                    openEditor('edit', id);
+                    return;
+                }
+                const d = discountsCache.find(x => x.id === id) ?? null;
+                const label = d ? formatDiscount(d) : id;
+                const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除折扣：${label}？`, okText: '確認', cancelText: '取消' });
+                if (!ok) return;
+                try {
+                    await deleteDoc(doc(db, 'discounts', id));
+                } catch (err) {
+                    if (noticeEl) {
+                        noticeEl.classList.remove('hidden');
+                        noticeEl.innerText = err?.message ?? '刪除失敗，請稍後再試。';
+                    }
+                }
+            });
+
+            editorForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (submitEl?.disabled) return;
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+
+                const name = String(nameEl.value ?? '').trim();
+                const type = String(typeEl.value ?? 'percent');
+                const value = Number(valueEl.value ?? '');
+                const active = Boolean(activeEl.checked);
+
+                if (!name) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '請輸入折扣名稱。';
+                    return;
+                }
+                if (!Number.isFinite(value) || value < 0) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '請輸入正確的折扣數值。';
+                    return;
+                }
+                if (type === 'percent' && value > 100) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '百分比折扣不可大於 100。';
+                    return;
+                }
+
+                submitEl.disabled = true;
+                submitEl.classList.add('opacity-70');
+                const prevText = submitEl.innerText;
+                submitEl.innerText = '儲存中...';
+                try {
+                    const payload = { name, type, value, scope: 'all', target: '', active, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null };
+                    if (discountEditorMode === 'edit' && editingDiscountId) {
+                        await updateDoc(doc(db, 'discounts', editingDiscountId), payload);
+                    } else {
+                        const id = crypto.randomUUID();
+                        await setDoc(doc(db, 'discounts', id), { ...payload, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null });
+                    }
+                    closeEditor();
+                } catch (err) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                } finally {
+                    submitEl.disabled = false;
+                    submitEl.classList.remove('opacity-70');
+                    submitEl.innerText = prevText;
+                }
+            });
+
+            renderRows();
+
+            if (!discountsUnsub) {
+                discountsUnsub = onSnapshot(
+                    collection(db, 'discounts'),
+                    (snapshot) => {
+                        if (noticeEl) {
+                            noticeEl.classList.add('hidden');
+                            noticeEl.innerText = '';
+                        }
+                        discountsCache = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                        renderRows();
+                    },
+                    (error) => {
+                        discountsCache = [];
+                        if (noticeEl) {
+                            noticeEl.classList.remove('hidden');
+                            noticeEl.innerText = `無法讀取折扣資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`;
+                        }
+                        renderRows();
+                    }
+                );
+            }
         };
 
         const renderProductsTab = () => {
@@ -670,6 +2076,7 @@
                     const name = escapeHtml(p.name ?? '');
                     const price = Number(p.price ?? 0);
                     const cost = p.costPrice != null ? Number(p.costPrice) : null;
+                    const emoji = escapeHtml(String(p.emoji ?? '').trim());
                     const imageUrl = p.imageDataUrl ? escapeHtml(p.imageDataUrl) : (p.imageUrl ? escapeHtml(p.imageUrl) : '');
                     const bgColor = escapeHtml(p.bgColor ?? '#f3f4f6');
 
@@ -684,13 +2091,6 @@
                         </div>
                     `;
 
-                    const colorSwatch = `
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block w-5 h-5 rounded-full border border-gray-200" style="background:${bgColor};"></span>
-                            <span class="text-xs text-gray-600">${bgColor}</span>
-                        </div>
-                    `;
-
                     return `
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-gray-700">${id}</td>
@@ -698,9 +2098,8 @@
                             <td class="px-4 py-3 font-bold text-gray-900">${category}</td>
                             <td class="px-4 py-3">${imageHtml}</td>
                             <td class="px-4 py-3 text-gray-900">${name}</td>
-                            <td class="px-4 py-3 font-bold text-gray-900">$ ${escapeHtml(price)}</td>
-                            <td class="px-4 py-3 text-gray-900">${cost != null ? `$ ${escapeHtml(cost)}` : '-'}</td>
-                            <td class="px-4 py-3">${colorSwatch}</td>
+                            <td class="px-4 py-3 font-bold text-gray-900">$ ${escapeHtml(String(price))}</td>
+                            <td class="px-4 py-3 text-gray-900">${cost != null ? `$ ${escapeHtml(String(cost))}` : '-'}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <button data-action="edit" data-id="${p.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
@@ -715,7 +2114,7 @@
                 if (tbody) {
                     tbody.innerHTML = rows || `
                         <tr>
-                            <td colspan="9" class="px-4 py-10 text-center text-gray-500">目前沒有商品資料。</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-gray-500">目前沒有商品資料。</td>
                         </tr>
                     `;
                 }
@@ -749,7 +2148,6 @@
                                         <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">名稱</th>
                                         <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">售價</th>
                                         <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">成本價</th>
-                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">底色</th>
                                         <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">操作</th>
                                     </tr>
                                 </thead>
@@ -832,6 +2230,16 @@
                     if (!ok) return;
                     try {
                         await deleteDoc(doc(db, 'products', String(id)));
+                        if (Array.isArray(productsTabCache)) {
+                            productsTabCache = productsTabCache.filter(p => String(p?.id ?? '') !== String(id));
+                        }
+                        if (Array.isArray(PRODUCTS)) {
+                            const idx = PRODUCTS.findIndex(p => String(p?.id ?? '') === String(id));
+                            if (idx >= 0) PRODUCTS.splice(idx, 1);
+                        }
+                        if (typeof renderRows === 'function') renderRows();
+                        if (typeof renderProducts === 'function') renderProducts();
+                        if (typeof renderInventory === 'function') renderInventory();
                     } catch (err) {
                         alert(err?.message ?? '刪除失敗，請稍後再試。');
                     }
@@ -1042,7 +2450,7 @@
                                 imageDataUrl = await resizeImageToDataUrl(file);
                             } catch {}
                         }
-                        const payload = { id: newId, name, price, category, brand, costPrice, bgColor, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null };
+                        const payload = { id: newId, name, price, category, brand, costPrice, stock: 0, bgColor, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null };
                         if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
                         await setDoc(doc(db, 'products', String(newId)), payload);
                     }
@@ -1508,8 +2916,8 @@
                             <td class="px-4 py-3 text-gray-900">${escapeHtml(count)}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
-                                    <button data-action="edit" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors"${doc ? '' : ' disabled'}>編輯</button>
-                                    <button data-action="delete" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors"${doc ? '' : ' disabled'}>刪除</button>
+                                    <button data-action="edit" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
                                 </div>
                             </td>
                         </tr>
@@ -1529,14 +2937,33 @@
                 const id = (editBtn ?? deleteBtn).getAttribute('data-id');
                 const name = (editBtn ?? deleteBtn).getAttribute('data-name');
                 if (editBtn) {
-                    if (!id) return;
-                    openEditor('edit', id);
+                    if (id) {
+                        openEditor('edit', id);
+                        return;
+                    }
+                    openEditor('create');
+                    nameEl.value = String(name ?? '').trim();
+                    setLogoUI('', nameEl.value || 'B');
                     return;
                 }
-                if (!id) return;
                 const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除品牌：${name}？`, okText: '確認', cancelText: '取消' });
                 if (!ok) return;
-                await deleteDoc(doc(db, 'brands', id));
+                const brandName = String(name ?? '').trim();
+                try {
+                    if (id) await deleteDoc(doc(db, 'brands', id));
+                } catch { }
+                try {
+                    const affected = PRODUCTS.filter(p => String(p?.brand ?? '').trim() === brandName).map(p => String(p?.id ?? '')).filter(Boolean);
+                    await Promise.all(affected.map((pid) => updateDoc(doc(db, 'products', pid), { brand: '-', updatedAt: serverTimestamp() })));
+                    PRODUCTS.forEach((p) => {
+                        if (String(p?.brand ?? '').trim() === brandName) p.brand = '-';
+                    });
+                    if (typeof renderProducts === 'function') renderProducts();
+                    if (typeof renderInventory === 'function') renderInventory();
+                } catch (err) {
+                    noticeEl.classList.remove('hidden');
+                    noticeEl.innerText = err?.message ?? '刪除失敗，請稍後再試。';
+                }
             });
 
             editorForm.addEventListener('submit', async (e) => {
@@ -1640,6 +3067,7 @@
                                 <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                                     <tr>
                                         <th class="text-left font-bold px-4 py-3">品牌</th>
+                                        <th class="text-left font-bold px-4 py-3">商品圖片</th>
                                         <th class="text-left font-bold px-4 py-3">商品</th>
                                         <th class="text-left font-bold px-4 py-3">庫存數量</th>
                                     </tr>
@@ -1684,14 +3112,16 @@
                             <table class="min-w-[720px] w-full text-sm">
                                 <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                                     <tr>
-                                        <th class="text-left font-bold px-4 py-3">進貨單</th>
-                                        <th class="text-left font-bold px-4 py-3">項目數量</th>
+                                        <th class="text-left font-bold px-4 py-3">進貨編號</th>
+                                        <th class="text-left font-bold px-4 py-3">進貨日期</th>
+                                        <th class="text-left font-bold px-4 py-3">進貨項目</th>
+                                        <th class="text-left font-bold px-4 py-3">進貨金額</th>
                                         <th class="text-left font-bold px-4 py-3">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="purchases-tbody" class="divide-y divide-gray-100">
                                     <tr>
-                                        <td class="px-4 py-10 text-center text-gray-500" colspan="3">目前沒有進貨資料。</td>
+                                        <td class="px-4 py-10 text-center text-gray-500" colspan="5">目前沒有進貨資料。</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1705,9 +3135,42 @@
                                 <button id="purchase-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
                             </div>
                             <form id="purchase-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="purchase-code">進貨編號</label>
+                                        <input id="purchase-code" type="text" required readonly class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="purchase-date">進貨日期</label>
+                                        <input id="purchase-date" type="date" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1" for="purchase-name">進貨單名稱</label>
-                                    <input id="purchase-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">進貨品項</label>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="text-xs text-gray-500 font-bold">品牌</div>
+                                        <select id="purchase-brand-filter" class="flex-1 px-3 py-2 rounded-2xl border border-gray-200 bg-white text-gray-900"></select>
+                                    </div>
+                                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                                        <div class="overflow-auto max-h-[40vh]">
+                                            <table class="min-w-[720px] w-full text-sm">
+                                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                                    <tr>
+                                                        <th class="text-left font-bold px-4 py-3">品項</th>
+                                                        <th class="text-left font-bold px-4 py-3">成本價</th>
+                                                        <th class="text-left font-bold px-4 py-3">數量</th>
+                                                        <th class="text-left font-bold px-4 py-3">小計</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="purchase-items-tbody" class="divide-y divide-gray-100"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex items-center justify-end gap-3">
+                                        <div class="text-sm font-bold text-gray-700">總計</div>
+                                        <div id="purchase-total-display" class="text-lg font-black text-gray-900">$ 0</div>
+                                    </div>
                                 </div>
 
                                 <div id="purchase-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
@@ -1723,23 +3186,539 @@
                             </form>
                         </div>
                     </div>
+
+                    <div id="purchase-detail-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div class="font-black tracking-wider">進貨明細</div>
+                                <button id="purchase-detail-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <div class="p-6 space-y-4">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div id="purchase-detail-title" class="font-black text-gray-900"></div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-sm font-bold text-gray-700">總計</div>
+                                        <div id="purchase-detail-total" class="text-lg font-black text-gray-900">$ 0</div>
+                                    </div>
+                                </div>
+                                <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                                    <div class="overflow-auto max-h-[60vh]">
+                                        <table class="min-w-[980px] w-full text-sm">
+                                            <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                                <tr>
+                                                    <th class="text-left font-bold px-4 py-3">品牌</th>
+                                                    <th class="text-left font-bold px-4 py-3">類別</th>
+                                                    <th class="text-left font-bold px-4 py-3">商品圖片</th>
+                                                    <th class="text-left font-bold px-4 py-3">商品</th>
+                                                    <th class="text-left font-bold px-4 py-3">成本價</th>
+                                                    <th class="text-left font-bold px-4 py-3">數量</th>
+                                                    <th class="text-left font-bold px-4 py-3">小計</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="purchase-detail-tbody" class="divide-y divide-gray-100"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
+
+            const noticeEl = document.getElementById('purchases-notice');
+            const tbody = document.getElementById('purchases-tbody');
             const modal = document.getElementById('purchase-editor-modal');
-            const openEditor = () => {
-                modal.style.display = 'flex';
+            const titleEl = document.getElementById('purchase-editor-title');
+            const formEl = document.getElementById('purchase-editor-form');
+            const errorEl = document.getElementById('purchase-editor-error');
+            const codeEl = document.getElementById('purchase-code');
+            const dateEl = document.getElementById('purchase-date');
+            const brandFilterEl = document.getElementById('purchase-brand-filter');
+            const itemsTbody = document.getElementById('purchase-items-tbody');
+            const totalEl = document.getElementById('purchase-total-display');
+            const submitEl = document.getElementById('purchase-editor-submit');
+            const detailModal = document.getElementById('purchase-detail-modal');
+            const detailCloseEl = document.getElementById('purchase-detail-close');
+            const detailTitleEl = document.getElementById('purchase-detail-title');
+            const detailTotalEl = document.getElementById('purchase-detail-total');
+            const detailTbody = document.getElementById('purchase-detail-tbody');
+
+            const formatDateToYmd = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
             };
+
+            const ymdToCodePart = (ymd) => String(ymd ?? '').replaceAll('-', '');
+
+            let purchaseBrandFilter = '全部';
+            const qtyByProductId = new Map();
+            let purchaseEditorMode = 'create';
+            let editingPurchaseCode = '';
+
+            const setTotal = (value) => {
+                if (!totalEl) return;
+                const v = Number.isFinite(Number(value)) ? Number(value) : 0;
+                totalEl.innerText = `$ ${v}`;
+            };
+
+            const computeEditorTotal = () => {
+                const list = Array.isArray(PRODUCTS) ? PRODUCTS : [];
+                return list.reduce((s, p) => {
+                    const pid = String(p?.id ?? '');
+                    const qty = Math.max(0, Math.floor(Number(qtyByProductId.get(pid) ?? 0) || 0));
+                    const cost = p?.costPrice != null ? Number(p.costPrice) : 0;
+                    return s + (Number.isFinite(cost) ? cost : 0) * qty;
+                }, 0);
+            };
+
+            const renderBrandOptions = () => {
+                if (!brandFilterEl) return;
+                const union = Array.from(new Set([
+                    ...brandsCache.map(b => String(b?.name ?? '').trim()).filter(Boolean),
+                    ...(Array.isArray(PRODUCTS) ? PRODUCTS : []).map(p => String(p?.brand ?? '').trim()).filter(Boolean),
+                ])).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+                const opts = ['全部', ...union].map((n) => `<option value="${escapeHtml(n)}"${n === purchaseBrandFilter ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+                brandFilterEl.innerHTML = opts;
+            };
+
+            const getPurchaseProducts = () => {
+                const list = Array.isArray(PRODUCTS) ? PRODUCTS : [];
+                return list.filter((p) => {
+                    const brand = String(p?.brand ?? '').trim();
+                    if (!purchaseBrandFilter || purchaseBrandFilter === '全部') return true;
+                    return brand === purchaseBrandFilter;
+                }).map((p) => {
+                    const id = p?.id;
+                    const name = String(p?.name ?? '').trim();
+                    const costPrice = p?.costPrice != null ? Number(p.costPrice) : 0;
+                    return { id, name, costPrice };
+                }).filter((x) => x.name);
+            };
+
+            const renderItems = () => {
+                if (!itemsTbody) return;
+                const list = getPurchaseProducts().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
+                if (list.length === 0) {
+                    itemsTbody.innerHTML = `
+                        <tr>
+                            <td class="px-4 py-8 text-center text-gray-500" colspan="4">目前沒有商品可帶入。</td>
+                        </tr>
+                    `;
+                    setTotal(computeEditorTotal());
+                    return;
+                }
+                itemsTbody.innerHTML = list.map((x) => {
+                    const id = escapeHtml(String(x.id ?? ''));
+                    const name = escapeHtml(x.name);
+                    const cost = Number.isFinite(x.costPrice) ? x.costPrice : 0;
+                    const qty = Math.max(0, Math.floor(Number(qtyByProductId.get(String(x.id ?? '')) ?? 0) || 0));
+                    const subtotal = cost * qty;
+                    return `
+                        <tr class="hover:bg-gray-50" data-cost="${escapeHtml(String(cost))}">
+                            <td class="px-4 py-3 font-bold text-gray-900">${name}</td>
+                            <td class="px-4 py-3 text-gray-900">$ ${escapeHtml(String(cost))}</td>
+                            <td class="px-4 py-3">
+                                <input data-role="qty" data-id="${id}" data-name="${name}" data-cost="${escapeHtml(String(cost))}" type="number" min="0" step="1" value="${escapeHtml(String(qty))}" class="w-28 px-3 py-2 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all text-right">
+                            </td>
+                            <td class="px-4 py-3 text-gray-900 font-bold" data-role="subtotal">$ ${escapeHtml(String(subtotal))}</td>
+                        </tr>
+                    `;
+                }).join('');
+                setTotal(computeEditorTotal());
+            };
+
+            const generateNextPurchaseCode = async (ymd) => {
+                const datePart = ymdToCodePart(ymd);
+                if (!datePart || datePart.length !== 8) throw new Error('日期格式不正確');
+                const prefix = `IN-${datePart}-`;
+                for (let seq = 1; seq <= 99; seq += 1) {
+                    const code = `${prefix}${String(seq).padStart(2, '0')}`;
+                    const snap = await getDoc(doc(db, 'purchases', code));
+                    if (!snap.exists()) return code;
+                }
+                throw new Error('今日進貨編號已滿，請更換日期或稍後再試。');
+            };
+
+            const renderRows = () => {
+                if (!tbody) return;
+                const list = Array.isArray(purchasesCache) ? purchasesCache : [];
+                if (list.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td class="px-4 py-10 text-center text-gray-500" colspan="5">目前沒有進貨資料。</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                tbody.innerHTML = list.map((p) => {
+                    const code = escapeHtml(p.code ?? '');
+                    const date = escapeHtml(p.date ?? '-');
+                    const items = Array.isArray(p.items) ? p.items : [];
+                    const count = escapeHtml(String(items.length));
+                    const amount = escapeHtml(String(items.reduce((s, x) => {
+                        const subtotal = x?.subtotal != null ? Number(x.subtotal) : null;
+                        if (subtotal != null && Number.isFinite(subtotal)) return s + subtotal;
+                        const cost = x?.costPrice != null ? Number(x.costPrice) : 0;
+                        const qty = x?.qty != null ? Number(x.qty) : 0;
+                        if (!Number.isFinite(cost) || !Number.isFinite(qty)) return s;
+                        return s + cost * qty;
+                    }, 0)));
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">${code}</td>
+                            <td class="px-4 py-3 text-gray-900">${date}</td>
+                            <td class="px-4 py-3">
+                                <button data-action="items" data-id="${code}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">項目</button>
+                                <span class="ml-2 text-gray-500 text-xs font-bold">${count}</span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-900 font-bold">$ ${amount}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${code}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${code}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            };
+
+            const startPurchasesWatch = () => {
+                if (purchasesUnsub) return;
+                purchasesUnsub = onSnapshot(
+                    collection(db, 'purchases'),
+                    (snapshot) => {
+                        purchasesCache = snapshot.docs.map((d) => {
+                            const data = d.data() ?? {};
+                            const rawItems = Array.isArray(data.items) ? data.items : [];
+                            const items = rawItems.map((x) => {
+                                if (typeof x === 'string') {
+                                    const name = String(x ?? '').trim();
+                                    if (!name) return null;
+                                    return { name, costPrice: null, qty: null, subtotal: null };
+                                }
+                                if (!x || typeof x !== 'object') return null;
+                                const name = String(x.name ?? '').trim();
+                                if (!name) return null;
+                                const costPrice = x.costPrice != null ? Number(x.costPrice) : null;
+                                const qty = x.qty != null ? Number(x.qty) : (x.quantity != null ? Number(x.quantity) : null);
+                                const subtotal = x.subtotal != null ? Number(x.subtotal) : null;
+                                return { productId: x.productId ?? null, name, costPrice, qty, subtotal };
+                            }).filter(Boolean);
+                            return {
+                                code: String(data.code ?? d.id),
+                                date: String(data.date ?? ''),
+                                items,
+                                createdAt: data.createdAt ?? null
+                            };
+                        }).sort((a, b) => {
+                            const ad = String(a.date ?? '');
+                            const bd = String(b.date ?? '');
+                            if (ad !== bd) return bd.localeCompare(ad);
+                            return String(b.code ?? '').localeCompare(String(a.code ?? ''), 'en');
+                        });
+                        renderRows();
+                        if (noticeEl) {
+                            noticeEl.classList.add('hidden');
+                            noticeEl.innerText = '';
+                        }
+                    },
+                    (error) => {
+                        purchasesCache = [];
+                        renderRows();
+                        if (noticeEl) {
+                            noticeEl.classList.remove('hidden');
+                            noticeEl.innerText = `無法讀取進貨資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`;
+                        }
+                    }
+                );
+            };
+
+            const openEditor = async (mode = 'create', code = '') => {
+                if (!modal || !titleEl || !codeEl || !dateEl || !errorEl) return;
+                purchaseEditorMode = mode === 'edit' ? 'edit' : 'create';
+                editingPurchaseCode = purchaseEditorMode === 'edit' ? String(code ?? '').trim() : '';
+                titleEl.innerText = purchaseEditorMode === 'edit' ? '編輯進貨' : '新增進貨';
+                errorEl.classList.add('hidden');
+                errorEl.innerText = '';
+                purchaseBrandFilter = '全部';
+                qtyByProductId.clear();
+                renderBrandOptions();
+                modal.style.display = 'flex';
+                if (purchaseEditorMode === 'edit') {
+                    const target = purchasesCache.find(x => String(x.code ?? '').trim() === editingPurchaseCode) ?? null;
+                    if (!target) {
+                        codeEl.value = '';
+                        dateEl.value = formatDateToYmd(new Date());
+                        renderItems();
+                        errorEl.classList.remove('hidden');
+                        errorEl.innerText = '找不到要編輯的進貨單。';
+                        return;
+                    }
+                    codeEl.value = String(target.code ?? editingPurchaseCode);
+                    dateEl.value = String(target.date ?? '').trim() || formatDateToYmd(new Date());
+                    (Array.isArray(target.items) ? target.items : []).forEach((it) => {
+                        const pid = it?.productId != null ? String(it.productId) : '';
+                        const qty = it?.qty != null ? Number(it.qty) : 0;
+                        if (pid && Number.isFinite(qty) && qty > 0) qtyByProductId.set(pid, Math.floor(qty));
+                    });
+                    renderItems();
+                    return;
+                }
+
+                dateEl.value = formatDateToYmd(new Date());
+                renderItems();
+                try {
+                    codeEl.value = '產生中...';
+                    codeEl.value = await generateNextPurchaseCode(dateEl.value);
+                } catch (err) {
+                    errorEl.classList.remove('hidden');
+                    errorEl.innerText = err?.message ?? '無法產生進貨編號';
+                    codeEl.value = '';
+                }
+            };
+
             const closeEditor = () => {
+                if (!modal) return;
                 modal.style.display = 'none';
             };
-            document.getElementById('purchase-add-btn')?.addEventListener('click', openEditor);
+
+            document.getElementById('purchase-add-btn')?.addEventListener('click', () => { void openEditor('create'); });
             document.getElementById('purchase-editor-close')?.addEventListener('click', closeEditor);
             document.getElementById('purchase-editor-cancel')?.addEventListener('click', closeEditor);
             modal?.addEventListener('click', (e) => { if (e.target === modal) closeEditor(); });
-            document.getElementById('purchase-editor-form')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                closeEditor();
-            });
+
+            if (dateEl && codeEl && errorEl) {
+                dateEl.addEventListener('change', () => {
+                    void (async () => {
+                        if (purchaseEditorMode === 'edit') return;
+                        errorEl.classList.add('hidden');
+                        errorEl.innerText = '';
+                        try {
+                            codeEl.value = '產生中...';
+                            codeEl.value = await generateNextPurchaseCode(dateEl.value);
+                        } catch (err) {
+                            errorEl.classList.remove('hidden');
+                            errorEl.innerText = err?.message ?? '無法產生進貨編號';
+                            codeEl.value = '';
+                        }
+                    })();
+                });
+            }
+
+            if (brandFilterEl) {
+                brandFilterEl.addEventListener('change', () => {
+                    const v = String(brandFilterEl.value ?? '').trim();
+                    purchaseBrandFilter = v || '全部';
+                    renderBrandOptions();
+                    renderItems();
+                });
+            }
+
+            if (itemsTbody) {
+                itemsTbody.addEventListener('input', (e) => {
+                    const input = e.target.closest('input[data-role="qty"]');
+                    if (!input) return;
+                    const tr = input.closest('tr');
+                    if (!tr) return;
+                    const cost = Number(input.getAttribute('data-cost') ?? tr.getAttribute('data-cost') ?? 0) || 0;
+                    const qtyRaw = Number(input.value ?? 0);
+                    const qty = Number.isFinite(qtyRaw) ? Math.max(0, Math.floor(qtyRaw)) : 0;
+                    input.value = String(qty);
+                    const subtotal = cost * qty;
+                    const subtotalEl = tr.querySelector('[data-role="subtotal"]');
+                    if (subtotalEl) subtotalEl.innerText = `$ ${subtotal}`;
+                    const id = String(input.getAttribute('data-id') ?? '').trim();
+                    if (id) qtyByProductId.set(id, qty);
+                    setTotal(computeEditorTotal());
+                });
+            }
+
+            const closeDetail = () => {
+                if (!detailModal) return;
+                detailModal.style.display = 'none';
+            };
+
+            const openDetail = (code) => {
+                if (!detailModal || !detailTitleEl || !detailTotalEl || !detailTbody) return;
+                const target = purchasesCache.find(x => String(x.code ?? '').trim() === String(code ?? '').trim()) ?? null;
+                if (!target) return;
+                const items = Array.isArray(target.items) ? target.items : [];
+                const total = items.reduce((s, x) => {
+                    const subtotal = x?.subtotal != null ? Number(x.subtotal) : null;
+                    if (subtotal != null && Number.isFinite(subtotal)) return s + subtotal;
+                    const cost = x?.costPrice != null ? Number(x.costPrice) : 0;
+                    const qty = x?.qty != null ? Number(x.qty) : 0;
+                    if (!Number.isFinite(cost) || !Number.isFinite(qty)) return s;
+                    return s + cost * qty;
+                }, 0);
+
+                detailTitleEl.innerText = `${String(target.code ?? '')}｜${String(target.date ?? '')}`;
+                detailTotalEl.innerText = `$ ${total}`;
+
+                if (items.length === 0) {
+                    detailTbody.innerHTML = `
+                        <tr>
+                            <td class="px-4 py-10 text-center text-gray-500" colspan="7">此進貨單沒有明細。</td>
+                        </tr>
+                    `;
+                } else {
+                    detailTbody.innerHTML = items.map((it) => {
+                        const pid = it?.productId != null ? String(it.productId) : '';
+                        const prod = pid ? (Array.isArray(PRODUCTS) ? PRODUCTS : []).find(p => String(p?.id ?? '') === pid) : null;
+                        const brand = escapeHtml(String(prod?.brand ?? '-'));
+                        const category = escapeHtml(String(prod?.category ?? '-'));
+                        const name = escapeHtml(String(it?.name ?? prod?.name ?? ''));
+                        const cost = it?.costPrice != null ? Number(it.costPrice) : (prod?.costPrice != null ? Number(prod.costPrice) : 0);
+                        const qty = it?.qty != null ? Number(it.qty) : 0;
+                        const subtotal = it?.subtotal != null ? Number(it.subtotal) : (Number.isFinite(cost) && Number.isFinite(qty) ? cost * qty : 0);
+                        const imageUrl = prod?.imageDataUrl || prod?.imageUrl || null;
+                        const thumb = imageUrl
+                            ? `<img src="${escapeHtml(imageUrl)}" alt="${name}" class="w-10 h-10 rounded-2xl object-cover">`
+                            : `<div class="w-10 h-10 rounded-2xl bg-gray-100"></div>`;
+
+                        return `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 text-gray-900 font-bold">${brand}</td>
+                                <td class="px-4 py-3 text-gray-900">${category}</td>
+                                <td class="px-4 py-3"><div class="shrink-0">${thumb}</div></td>
+                                <td class="px-4 py-3 font-bold text-gray-900 truncate max-w-[320px]">${name}</td>
+                                <td class="px-4 py-3 text-gray-900">$ ${escapeHtml(String(cost ?? 0))}</td>
+                                <td class="px-4 py-3 text-gray-900 font-bold">${escapeHtml(String(qty ?? 0))}</td>
+                                <td class="px-4 py-3 text-gray-900 font-bold">$ ${escapeHtml(String(subtotal ?? 0))}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                detailModal.style.display = 'flex';
+            };
+
+            detailCloseEl?.addEventListener('click', closeDetail);
+            detailModal?.addEventListener('click', (e) => { if (e.target === detailModal) closeDetail(); });
+
+            if (tbody) {
+                tbody.addEventListener('click', async (e) => {
+                    const itemsBtn = e.target.closest('[data-action="items"]');
+                    if (itemsBtn) {
+                        const id = itemsBtn.getAttribute('data-id');
+                        if (id) openDetail(id);
+                        return;
+                    }
+                    const editBtn = e.target.closest('[data-action="edit"]');
+                    if (editBtn) {
+                        const id = editBtn.getAttribute('data-id');
+                        if (id) void openEditor('edit', id);
+                        return;
+                    }
+                    const deleteBtn = e.target.closest('[data-action="delete"]');
+                    if (!deleteBtn) return;
+                    const id = deleteBtn.getAttribute('data-id');
+                    if (!id) return;
+                    const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除進貨單：${id}？`, okText: '確認', cancelText: '取消' });
+                    if (!ok) return;
+                    try {
+                        const purchaseRef = doc(db, 'purchases', String(id));
+                        await runTransaction(db, async (tx) => {
+                            const snap = await tx.get(purchaseRef);
+                            if (!snap.exists()) return;
+                            const data = snap.data() ?? {};
+                            const qtyByPid = buildQtyMapFromPurchaseItems(Array.isArray(data.items) ? data.items : []);
+                            const deltas = new Map(Array.from(qtyByPid.entries()).map(([pid, qty]) => [pid, -Math.abs(toSafeInt(qty))]));
+                            await applyProductStockDeltasTx(tx, deltas);
+                            tx.delete(purchaseRef);
+                        });
+                    } catch (err) {
+                        if (noticeEl) {
+                            noticeEl.classList.remove('hidden');
+                            noticeEl.innerText = err?.message ?? '刪除失敗，請稍後再試。';
+                        }
+                    }
+                });
+            }
+
+            if (formEl && errorEl && codeEl && dateEl && itemsTbody && submitEl) {
+                formEl.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    void (async () => {
+                        if (submitEl.disabled) return;
+                        errorEl.classList.add('hidden');
+                        errorEl.innerText = '';
+
+                        const code = String(codeEl.value ?? '').trim();
+                        const date = String(dateEl.value ?? '').trim();
+                        const items = (Array.isArray(PRODUCTS) ? PRODUCTS : []).map((p) => {
+                            const pid = String(p?.id ?? '');
+                            if (!pid) return null;
+                            const qtyRaw = qtyByProductId.get(pid);
+                            const qty = Number.isFinite(Number(qtyRaw)) ? Math.max(0, Math.floor(Number(qtyRaw))) : 0;
+                            if (!qty) return null;
+                            const name = String(p?.name ?? '').trim();
+                            const costPrice = p?.costPrice != null ? Number(p.costPrice) : 0;
+                            const productDocId = String(p?.docId ?? pid);
+                            return { productId: p?.id ?? pid, productDocId, name, costPrice, qty, subtotal: costPrice * qty };
+                        }).filter(Boolean);
+
+                        if (!code) {
+                            errorEl.classList.remove('hidden');
+                            errorEl.innerText = '請先產生進貨編號。';
+                            return;
+                        }
+                        if (!date) {
+                            errorEl.classList.remove('hidden');
+                            errorEl.innerText = '請選擇進貨日期。';
+                            return;
+                        }
+
+                        submitEl.disabled = true;
+                        submitEl.classList.add('opacity-60');
+                        try {
+                            const ref = doc(db, 'purchases', code);
+                            await runTransaction(db, async (tx) => {
+                                const snap = await tx.get(ref);
+                                const existed = snap.exists();
+                                if (purchaseEditorMode === 'edit' && !existed) throw new Error('找不到要編輯的進貨單。');
+                                if (purchaseEditorMode !== 'edit' && existed) throw new Error('__PURCHASE_CODE_USED__');
+                                const prev = existed ? (snap.data() ?? {}) : {};
+                                const prevMap = buildQtyMapFromPurchaseItems(Array.isArray(prev.items) ? prev.items : []);
+                                const nextMap = buildQtyMapFromPurchaseItems(items);
+                                const deltas = new Map();
+                                const allPids = new Set([...Array.from(prevMap.keys()), ...Array.from(nextMap.keys())]);
+                                allPids.forEach((pid) => {
+                                    const d = (Number(nextMap.get(pid) ?? 0) || 0) - (Number(prevMap.get(pid) ?? 0) || 0);
+                                    if (d) deltas.set(pid, d);
+                                });
+                                await applyProductStockDeltasTx(tx, deltas);
+                                if (purchaseEditorMode === 'edit') {
+                                    tx.update(ref, { date, items, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null });
+                                } else {
+                                    tx.set(ref, { code, date, items, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null });
+                                }
+                            });
+                            closeEditor();
+                        } catch (err) {
+                            if (String(err?.message ?? '') === '__PURCHASE_CODE_USED__') {
+                                try {
+                                    codeEl.value = await generateNextPurchaseCode(date);
+                                } catch { }
+                                errorEl.classList.remove('hidden');
+                                errorEl.innerText = '進貨編號已被使用，已重新產生新的編號，請再儲存一次。';
+                                return;
+                            }
+                            errorEl.classList.remove('hidden');
+                            errorEl.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                        } finally {
+                            submitEl.disabled = false;
+                            submitEl.classList.remove('opacity-60');
+                        }
+                    })();
+                });
+            }
+
+            renderRows();
+            startPurchasesWatch();
         };
         const renderAccountsTab = () => {
             settingsContentEl.innerHTML = `
@@ -2268,6 +4247,27 @@
             }
         };
 
+        const unmountPurchasesTab = () => {
+            if (purchasesUnsub) {
+                purchasesUnsub();
+                purchasesUnsub = null;
+            }
+        };
+
+        const unmountDiscountsTab = () => {
+            if (discountsUnsub) {
+                discountsUnsub();
+                discountsUnsub = null;
+            }
+        };
+
+        const unmountPaymentsTab = () => {
+            if (paymentsUnsub) {
+                paymentsUnsub();
+                paymentsUnsub = null;
+            }
+        };
+
         const setSettingsTab = (tab) => {
             if (!isTabAllowedForRole(tab)) {
                 const allowed = getAllowedTabsForRole();
@@ -2283,27 +4283,36 @@
                     : 'px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50';
             });
             settingsContentTitleEl.innerText = tab;
+            if (tab !== '金流') unmountPaymentsTab();
             if (tab === '帳號') {
+                unmountPurchasesTab();
                 unmountCategoriesTab();
+                unmountDiscountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderAccountsTab();
                 return;
             }
             if (tab === '商品') {
+                unmountPurchasesTab();
                 unmountAccountsTab();
                 unmountCategoriesTab();
+                unmountDiscountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderProductsTab();
                 return;
             }
             if (tab === '類別') {
+                unmountPurchasesTab();
                 unmountAccountsTab();
+                unmountDiscountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderCategoriesTab();
                 return;
             }
             if (tab === '庫存') {
+                unmountPurchasesTab();
                 unmountAccountsTab();
+                unmountDiscountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderInventoryTab();
                 return;
@@ -2311,17 +4320,67 @@
             if (tab === '進貨') {
                 unmountAccountsTab();
                 unmountCategoriesTab();
+                unmountDiscountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderPurchasesTab();
                 return;
             }
-            if (tab === '品牌') {
+            if (tab === '金流') {
+                unmountPurchasesTab();
                 unmountAccountsTab();
+                unmountCategoriesTab();
+                unmountDiscountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderPaymentsTab();
+                return;
+            }
+            if (tab === '折扣') {
+                unmountPurchasesTab();
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                unmountDiscountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderDiscountsTab();
+                return;
+            }
+            if (tab === '品牌') {
+                unmountPurchasesTab();
+                unmountAccountsTab();
+                unmountDiscountsTab();
                 renderBrandsTab();
                 return;
             }
+            if (tab === '設定') {
+                unmountPurchasesTab();
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                unmountDiscountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderSettingsTab();
+                return;
+            }
+            if (tab === '訂單') {
+                unmountPurchasesTab();
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                unmountDiscountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderOrdersTab();
+                return;
+            }
+            if (tab === '帳務') {
+                unmountPurchasesTab();
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                unmountDiscountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderAccountingTab();
+                return;
+            }
+            unmountPurchasesTab();
             unmountAccountsTab();
             unmountCategoriesTab();
+            unmountDiscountsTab();
             if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
             renderPlaceholder(tab);
         };
@@ -2342,6 +4401,31 @@
                 closeConfirm(false);
                 return;
             }
+            const cartDiscountModal = document.getElementById('cart-discount-modal');
+            if (cartDiscountModal?.style.display === 'flex') {
+                cartDiscountModal.style.display = 'none';
+                return;
+            }
+            const checkoutModal = document.getElementById('checkout-modal');
+            if (checkoutModal?.style.display === 'flex') {
+                checkoutModal.style.display = 'none';
+                return;
+            }
+            const orderReceiptModal = document.getElementById('order-receipt-modal');
+            if (orderReceiptModal?.style.display === 'flex') {
+                orderReceiptModal.style.display = 'none';
+                return;
+            }
+            const orderEditorModal = document.getElementById('order-editor-modal');
+            if (orderEditorModal?.style.display === 'flex') {
+                orderEditorModal.style.display = 'none';
+                return;
+            }
+            const ordersModal = document.getElementById('orders-modal');
+            if (ordersModal?.style.display === 'flex') {
+                ordersModal.style.display = 'none';
+                return;
+            }
             if (settingsModal.style.display === 'flex') closeSettingsModal();
         });
 
@@ -2358,11 +4442,13 @@
                         const fid = String(d.id);
                         const id = Number.isFinite(Number(fid)) ? Number(fid) : (Number(data.id) || fid);
                         return {
+                            docId: fid,
                             id,
                             name: String(data.name ?? ''),
                             category: String(data.category ?? ''),
                             brand: String(data.brand ?? '-') || '-',
                             price: Number(data.price ?? 0),
+                            stock: Number.isFinite(Number(data.stock)) ? Number(data.stock) : 0,
                             costPrice: data.costPrice != null ? Number(data.costPrice) : null,
                             emoji: String(data.emoji ?? ''),
                             bgColor: String(data.bgColor ?? '#f3f4f6') || '#f3f4f6',
@@ -2381,6 +4467,7 @@
         }
 
         let cart = [];
+        let appliedDiscountId = null;
         let currentCategory = '全部';
         let searchQuery = '';
 
@@ -2431,16 +4518,22 @@
                 const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === brandName);
                 const brandLogo = brandDoc?.logoDataUrl || null;
                 const imageUrl = p.imageDataUrl || p.imageUrl || null;
+                const stock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+                const soldOut = stock <= 0;
                 const imgMain = imageUrl
-                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" class="w-20 h-20 object-cover rounded-2xl">`
-                    : (brandLogo ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName || name)}" class="w-16 h-16 object-cover rounded-2xl">` : `<div class="w-20 aspect-square rounded-2xl bg-gray-100"></div>`);
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" class="h-full w-auto max-w-full object-contain rounded-2xl">`
+                    : (brandLogo
+                        ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName || name)}" class="h-full w-auto max-w-full object-contain rounded-2xl">`
+                        : `<div class="h-full w-full rounded-2xl bg-gray-100"></div>`);
                 const brandBadge = brandLogo
-                    ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName)}" class="absolute top-2 left-2 w-6 h-6 rounded-full object-cover border border-white shadow-sm">`
+                    ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName)}" class="absolute top-2 right-2 w-6 h-6 rounded-full object-cover border border-white shadow-sm">`
                     : '';
+                const stockBadge = `<div class="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-black ${soldOut ? 'bg-red-600 text-white' : 'bg-black text-white'}">${escapeHtml(stock)}</div>`;
                 return `
-                <div onclick="addToCart(${p.id})" class="relative bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-300 hover:shadow-md cursor-pointer transition-all active:scale-95 flex flex-col items-center text-center group">
+                <div ${soldOut ? '' : `onclick="addToCart(${p.id})"`} class="relative bg-white px-4 pb-4 pt-0 h-56 rounded-2xl border border-gray-100 shadow-sm transition-all flex flex-col items-stretch text-center group ${soldOut ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:border-gray-300 hover:shadow-md cursor-pointer active:scale-95'}">
+                    ${stockBadge}
                     ${brandBadge}
-                    <span class="w-20 aspect-square flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">${imgMain}</span>
+                    <span class="h-1/2 w-full flex items-start justify-center overflow-hidden mb-2 group-hover:scale-110 transition-transform">${imgMain}</span>
                     <span class="font-bold text-sm overflow-hidden line-clamp-2 leading-normal pb-0.5 min-h-[1.8rem]">${escapeHtml(name)}</span>
                     <span class="text-gray-900 font-black -mt-1 text-xl">$ ${escapeHtml(p.price)}</span>
                 </div>`;
@@ -2454,7 +4547,7 @@
             if (!Array.isArray(PRODUCTS) || PRODUCTS.length === 0) {
                 tbody.innerHTML = `
                     <tr class="hover:bg-white">
-                        <td class="px-4 py-6 text-gray-600" colspan="3">目前沒有商品。</td>
+                        <td class="px-4 py-6 text-gray-600" colspan="4">目前沒有商品。</td>
                     </tr>
                 `;
                 return;
@@ -2483,12 +4576,8 @@
                 return `
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">${brandCell}</td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-3">
-                                <div class="shrink-0">${thumb}</div>
-                                <div class="font-bold text-gray-900 truncate max-w-[240px]">${escapeHtml(name)}</div>
-                            </div>
-                        </td>
+                        <td class="px-4 py-3"><div class="shrink-0">${thumb}</div></td>
+                        <td class="px-4 py-3 font-bold text-gray-900 truncate max-w-[260px]">${escapeHtml(name)}</td>
                         <td class="px-4 py-3 text-gray-900 font-bold">${escapeHtml(stock)}</td>
                     </tr>
                 `;
@@ -2537,74 +4626,589 @@
             }
 
             const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-            const tax = Math.round(subtotal * 0.05);
-            const total = subtotal + tax;
+            const discount = (() => {
+                if (!appliedDiscountId) return null;
+                const d = (Array.isArray(discountsCache) ? discountsCache : []).find(x => String(x?.id ?? '') === String(appliedDiscountId));
+                if (!d) return null;
+                return d;
+            })();
+            if (appliedDiscountId && !discount) appliedDiscountId = null;
+
+            const discountAmount = (() => {
+                if (!discount) return 0;
+                if (!Boolean(discount.active ?? true)) return 0;
+                const type = String(discount.type ?? 'percent');
+                const value = Number(discount.value ?? 0) || 0;
+                if (type === 'amount') return Math.max(0, Math.min(subtotal, Math.round(value)));
+                return Math.max(0, Math.min(subtotal, Math.round(subtotal * (value / 100))));
+            })();
+
+            const base = Math.max(0, subtotal - discountAmount);
+            const tax = Math.round(base * (Number(serviceFeePercent ?? 0) / 100));
+            const total = base + tax;
 
             document.getElementById('subtotal-display').innerText = `$ ${subtotal}`;
             document.getElementById('tax-display').innerText = `$ ${tax}`;
+            const discountEl = document.getElementById('discount-display');
+            if (discountEl) discountEl.innerText = discountAmount ? `-$ ${discountAmount}` : '$ 0';
             document.getElementById('total-display').innerText = `$ ${total}`;
-            return { subtotal, tax, total };
+            return { subtotal, discountAmount, tax, total, discount };
         }
 
         // 5. 互動邏輯 (掛載到 window 供 HTML 呼叫)
         window.setCategory = (cat) => { currentCategory = cat; renderCategories(); renderProducts(); };
         window.addToCart = (id) => {
             const p = PRODUCTS.find(x => x.id === id);
+            if (!p) return;
+            const stock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+            if (stock <= 0) return;
             const exist = cart.find(x => x.id === id);
-            if (exist) exist.quantity++;
+            if (exist) {
+                if (exist.quantity >= stock) return;
+                exist.quantity++;
+            }
             else cart.push({ ...p, quantity: 1 });
             renderCart();
         };
         window.updateQty = (id, delta) => {
             const item = cart.find(x => x.id === id);
+            if (!item) return;
+            if (delta > 0) {
+                const p = PRODUCTS.find(x => x.id === id) ?? item;
+                const stock = Number.isFinite(Number(p?.stock)) ? Number(p.stock) : 0;
+                if (stock <= 0) return;
+                if ((Number(item.quantity) || 0) >= stock) return;
+            }
             item.quantity += delta;
             if (item.quantity <= 0) cart = cart.filter(x => x.id !== id);
             renderCart();
         };
-        window.clearCart = () => { cart = []; renderCart(); };
+        window.clearCart = () => { cart = []; appliedDiscountId = null; renderCart(); };
+
+        let selectedPaymentId = null;
+
+        const checkoutModal = document.getElementById('checkout-modal');
+        const checkoutModalClose = document.getElementById('checkout-modal-close');
+        const checkoutCancelBtn = document.getElementById('checkout-cancel-btn');
+        const checkoutConfirmBtn = document.getElementById('checkout-confirm-btn');
+        const checkoutNoticeEl = document.getElementById('checkout-modal-notice');
+        const checkoutItemsTbody = document.getElementById('checkout-items-tbody');
+        const checkoutSubtotalEl = document.getElementById('checkout-subtotal');
+        const checkoutDiscountEl = document.getElementById('checkout-discount');
+        const checkoutServiceFeeEl = document.getElementById('checkout-service-fee');
+        const checkoutTotalEl = document.getElementById('checkout-total');
+        const checkoutPaymentsEl = document.getElementById('checkout-payments');
+
+        const showCheckoutNotice = (msg) => {
+            if (!checkoutNoticeEl) return;
+            checkoutNoticeEl.classList.remove('hidden');
+            checkoutNoticeEl.innerText = msg;
+        };
+        const hideCheckoutNotice = () => {
+            if (!checkoutNoticeEl) return;
+            checkoutNoticeEl.classList.add('hidden');
+            checkoutNoticeEl.innerText = '';
+        };
+
+        const closeCheckoutModal = () => {
+            if (!checkoutModal) return;
+            checkoutModal.style.display = 'none';
+        };
+
+        const setCheckoutLoading = (loading) => {
+            const disabled = Boolean(loading);
+            checkoutConfirmBtn.disabled = disabled;
+            checkoutCancelBtn.disabled = disabled;
+            checkoutModalClose.disabled = disabled;
+            if (disabled) {
+                checkoutConfirmBtn.classList.add('opacity-70');
+                checkoutCancelBtn.classList.add('opacity-70');
+                checkoutModalClose.classList.add('opacity-70');
+            } else {
+                checkoutConfirmBtn.classList.remove('opacity-70');
+                checkoutCancelBtn.classList.remove('opacity-70');
+                checkoutModalClose.classList.remove('opacity-70');
+            }
+        };
+
+        const renderCheckoutPayments = (list) => {
+            if (!checkoutPaymentsEl) return;
+            const items = [...(Array.isArray(list) ? list : [])].sort((a, b) => String(a?.name ?? '').localeCompare(String(b?.name ?? ''), 'zh-Hant'));
+            if (items.length === 0) {
+                checkoutPaymentsEl.innerHTML = `<div class="text-sm text-gray-500">尚未設定金流方式。</div>`;
+                return;
+            }
+
+            checkoutPaymentsEl.innerHTML = items.map((p) => {
+                const id = String(p?.id ?? '');
+                const name = escapeHtml(String(p?.name ?? '').trim() || '-');
+                const active = Boolean(p?.active ?? true);
+                const selected = selectedPaymentId && String(selectedPaymentId) === id;
+                const baseClass = active
+                    ? (selected ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50')
+                    : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed';
+                const status = active
+                    ? '<span class="text-xs font-black">啟用</span>'
+                    : '<span class="text-xs font-black">停用</span>';
+                return `
+                    <button type="button" data-action="select-payment" data-id="${escapeHtml(id)}" ${active ? '' : 'disabled'} class="w-full px-4 py-3 rounded-2xl font-bold border transition-colors flex items-center justify-between ${baseClass}">
+                        <span class="truncate">${name}</span>
+                        ${status}
+                    </button>
+                `;
+            }).join('');
+        };
+
+        const renderCheckoutItems = ({ subtotal, discountAmount, tax, total }) => {
+            if (!checkoutItemsTbody) return;
+            checkoutItemsTbody.innerHTML = cart.map((i) => {
+                const name = escapeHtml(String(i?.name ?? ''));
+                const brandName = String(i?.brand ?? '').trim();
+                const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === brandName);
+                const brandLogo = brandDoc?.logoDataUrl || null;
+                const imageUrl = i?.imageDataUrl || i?.imageUrl || null;
+                const thumb = imageUrl
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${name}" class="w-10 h-10 object-cover rounded-xl">`
+                    : (brandLogo ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName || String(i?.name ?? ''))}" class="w-10 h-10 object-cover rounded-xl">` : `<div class="w-10 h-10 rounded-xl bg-gray-100"></div>`);
+                const qty = Number(i?.quantity ?? 0) || 0;
+                const lineTotal = (Number(i?.price ?? 0) || 0) * qty;
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3"><div class="shrink-0">${thumb}</div></td>
+                        <td class="px-4 py-3 font-bold text-gray-900">${name}</td>
+                        <td class="px-4 py-3 text-gray-900">${escapeHtml(qty)}</td>
+                        <td class="px-4 py-3 text-gray-900">$ ${escapeHtml(lineTotal)}</td>
+                    </tr>
+                `;
+            }).join('') || `
+                <tr>
+                    <td class="px-4 py-10 text-center text-gray-500" colspan="4">購物車是空的。</td>
+                </tr>
+            `;
+
+            if (checkoutSubtotalEl) checkoutSubtotalEl.innerText = `$ ${subtotal}`;
+            if (checkoutDiscountEl) checkoutDiscountEl.innerText = discountAmount ? `-$ ${discountAmount}` : '$ 0';
+            if (checkoutServiceFeeEl) checkoutServiceFeeEl.innerText = `$ ${tax}`;
+            if (checkoutTotalEl) checkoutTotalEl.innerText = `$ ${total}`;
+        };
+
+        const updateCheckoutConfirmState = () => {
+            const list = Array.isArray(paymentsCache) ? paymentsCache : [];
+            const selected = list.find((p) => String(p?.id ?? '') === String(selectedPaymentId ?? ''));
+            const ok = Boolean(selected && Boolean(selected.active ?? true));
+            checkoutConfirmBtn.disabled = !ok;
+            if (checkoutConfirmBtn.disabled) checkoutConfirmBtn.classList.add('opacity-70');
+            else checkoutConfirmBtn.classList.remove('opacity-70');
+        };
+
+        const openCheckoutModal = async () => {
+            if (!checkoutModal) return;
+            hideCheckoutNotice();
+            selectedPaymentId = null;
+            checkoutModal.style.display = 'flex';
+            const summary = renderCart();
+            renderCheckoutItems(summary);
+            renderCheckoutPayments([]);
+            updateCheckoutConfirmState();
+
+            try {
+                const snap = await getDocs(collection(db, 'payments'));
+                paymentsCache = snap.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                renderCheckoutPayments(paymentsCache);
+                const firstActive = paymentsCache.find((p) => Boolean(p?.active ?? true));
+                if (firstActive) selectedPaymentId = String(firstActive.id);
+                renderCheckoutPayments(paymentsCache);
+                updateCheckoutConfirmState();
+            } catch (err) {
+                paymentsCache = [];
+                renderCheckoutPayments([]);
+                showCheckoutNotice(err?.message ?? '無法讀取金流資料。');
+                updateCheckoutConfirmState();
+            }
+        };
+
+        const finalizeCheckout = async () => {
+            if (!currentUser) {
+                alert("尚未登入，請先登入。");
+                return;
+            }
+            const list = Array.isArray(paymentsCache) ? paymentsCache : [];
+            const payment = list.find((p) => String(p?.id ?? '') === String(selectedPaymentId ?? '')) ?? null;
+            if (!payment || !Boolean(payment.active ?? true)) {
+                showCheckoutNotice('請先選擇付款方式。');
+                updateCheckoutConfirmState();
+                return;
+            }
+
+            const { subtotal, discountAmount, tax, total, discount } = renderCart();
+            setCheckoutLoading(true);
+            const prevText = checkoutConfirmBtn.innerText;
+            checkoutConfirmBtn.innerText = '處理中...';
+            try {
+                const orderItems = cart.map((i) => ({
+                    productId: i?.id ?? null,
+                    productDocId: i?.docId != null ? String(i.docId) : (i?.productDocId != null ? String(i.productDocId) : null),
+                    name: i.name,
+                    price: i.price,
+                    qty: i.quantity
+                }));
+                const orderData = {
+                    items: orderItems,
+                    systemName: String(appSettingsCache?.systemName ?? '').trim() || null,
+                    subtotal,
+                    discountId: discount?.id ?? null,
+                    discountName: discount?.name ?? null,
+                    discountType: discount?.type ?? null,
+                    discountValue: discount?.value ?? null,
+                    discountAmount: discountAmount || 0,
+                    tax,
+                    total,
+                    paymentId: payment?.id ?? null,
+                    paymentName: payment?.name ?? null,
+                    cashierName: String(headerAccount?.name ?? '').trim() || (currentUser?.email ? String(currentUser.email).split('@')[0] : null),
+                    publicReceipt: true,
+                    createdAt: serverTimestamp(),
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email ?? null
+                };
+
+                const qtyByProductId = buildQtyMapFromItems(orderItems);
+                const deltas = new Map(Array.from(qtyByProductId.entries()).map(([pid, qty]) => [pid, -Math.abs(toSafeInt(qty))]));
+                const orderRef = doc(collection(db, 'orders'));
+                const orderId = await runTransaction(db, async (tx) => {
+                    await applyProductStockDeltasTx(tx, deltas);
+                    tx.set(orderRef, orderData);
+                    return orderRef.id;
+                });
+                const receiptUrl = new URL(`./receipt.html?id=${encodeURIComponent(orderId)}`, window.location.href).toString();
+
+                const receiptHtml = cart.map(i => `
+                    <div class="flex justify-between">
+                        <span>${escapeHtml(String(i.name ?? ''))} x ${escapeHtml(i.quantity)}</span>
+                        <span>$ ${escapeHtml((Number(i.price ?? 0) || 0) * (Number(i.quantity ?? 0) || 0))}</span>
+                    </div>
+                `).join('')
+                    + `<div class="mt-2 pt-2 flex justify-between text-gray-700"><span>付款方式 / Payment</span><span>${escapeHtml(String(payment?.name ?? '-'))}</span></div>`
+                    + (discountAmount ? `<div class="mt-1 flex justify-between text-gray-700"><span>折扣 / Discount</span><span>-$ ${discountAmount}</span></div>` : '')
+                    + `<div class="mt-1 flex justify-between text-gray-700"><span>服務費 / Service Fee</span><span>$ ${tax}</span></div>`
+                    + `<div class="receipt-dashed mt-2 pt-2 flex justify-between font-bold text-gray-900"><span>實收 / Total</span><span>$ ${total}</span></div>`
+                    + `<div class="mt-4 flex flex-col items-center gap-2">
+                            <div class="text-xs text-gray-500">掃描 QR code 查看電子收據 / Scan QR code to view e-receipt</div>
+                            <img alt="QR code" class="w-40 h-40" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${escapeHtml(encodeURIComponent(receiptUrl))}">
+                            <a class="text-xs font-bold text-gray-700 underline" href="${escapeHtml(receiptUrl)}" target="_blank" rel="noopener">開啟電子收據 / Open e-receipt</a>
+                        </div>`;
+
+                document.getElementById('receipt-content').innerHTML = receiptHtml;
+                document.getElementById('success-modal').style.display = 'flex';
+                closeCheckoutModal();
+            } catch (err) {
+                showCheckoutNotice(err?.message ?? '雲端儲存失敗，請檢查網路連線。');
+            } finally {
+                checkoutConfirmBtn.innerText = prevText;
+                setCheckoutLoading(false);
+                updateCheckoutConfirmState();
+            }
+        };
+
+        checkoutModalClose?.addEventListener('click', closeCheckoutModal);
+        checkoutCancelBtn?.addEventListener('click', closeCheckoutModal);
+        checkoutModal?.addEventListener('click', (e) => { if (e.target === checkoutModal) closeCheckoutModal(); });
+        checkoutPaymentsEl?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="select-payment"]');
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            if (!id) return;
+            selectedPaymentId = id;
+            renderCheckoutPayments(paymentsCache);
+            updateCheckoutConfirmState();
+        });
+        checkoutConfirmBtn?.addEventListener('click', finalizeCheckout);
+
+        const ordersBtn = document.getElementById('orders-btn');
+        const ordersModal = document.getElementById('orders-modal');
+        const ordersModalClose = document.getElementById('orders-modal-close');
+        const ordersNoticeEl = document.getElementById('orders-modal-notice');
+        const ordersTbody = document.getElementById('orders-tbody');
+        const orderReceiptModal = document.getElementById('order-receipt-modal');
+        const orderReceiptClose = document.getElementById('order-receipt-close');
+        const orderReceiptQr = document.getElementById('order-receipt-qr');
+        const orderReceiptLink = document.getElementById('order-receipt-link');
+        const orderEditorModal = document.getElementById('order-editor-modal');
+        const orderEditorClose = document.getElementById('order-editor-close');
+        const orderEditorCancel = document.getElementById('order-editor-cancel');
+        const orderEditorForm = document.getElementById('order-editor-form');
+        const orderEditorCashier = document.getElementById('order-editor-cashier');
+        const orderEditorError = document.getElementById('order-editor-error');
+        const orderEditorSave = document.getElementById('order-editor-save');
+        let ordersListCache = [];
+        let editingOrderId = null;
+
+        const showOrdersNotice = (msg) => {
+            if (!ordersNoticeEl) return;
+            ordersNoticeEl.classList.remove('hidden');
+            ordersNoticeEl.innerText = msg;
+        };
+        const hideOrdersNotice = () => {
+            if (!ordersNoticeEl) return;
+            ordersNoticeEl.classList.add('hidden');
+            ordersNoticeEl.innerText = '';
+        };
+
+        const closeOrdersModal = () => {
+            if (!ordersModal) return;
+            ordersModal.style.display = 'none';
+        };
+
+        const buildPublicReceiptUrl = (id) => {
+            try {
+                return new URL(`./receipt.html?id=${encodeURIComponent(String(id ?? ''))}`, window.location.href).toString();
+            } catch {
+                return `./receipt.html?id=${encodeURIComponent(String(id ?? ''))}`;
+            }
+        };
+
+        const closeOrderReceiptModal = () => {
+            if (!orderReceiptModal) return;
+            orderReceiptModal.style.display = 'none';
+            if (orderReceiptQr) orderReceiptQr.removeAttribute('src');
+            if (orderReceiptLink) orderReceiptLink.setAttribute('href', '#');
+        };
+
+        const openOrderReceiptModal = (id) => {
+            if (!orderReceiptModal) return;
+            const url = buildPublicReceiptUrl(id);
+            if (orderReceiptLink) orderReceiptLink.setAttribute('href', url);
+            if (orderReceiptQr) {
+                orderReceiptQr.setAttribute('src', `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`);
+            }
+            orderReceiptModal.style.display = 'flex';
+        };
+
+        const showOrderEditorError = (msg) => {
+            if (!orderEditorError) return;
+            orderEditorError.classList.remove('hidden');
+            orderEditorError.innerText = msg;
+        };
+        const hideOrderEditorError = () => {
+            if (!orderEditorError) return;
+            orderEditorError.classList.add('hidden');
+            orderEditorError.innerText = '';
+        };
+
+        const closeOrderEditorModal = () => {
+            if (!orderEditorModal) return;
+            orderEditorModal.style.display = 'none';
+            editingOrderId = null;
+            hideOrderEditorError();
+        };
+
+        const openOrderEditorModal = (id) => {
+            if (!orderEditorModal || !orderEditorCashier) return;
+            const target = ordersListCache.find((o) => String(o?.id ?? '') === String(id ?? '')) ?? null;
+            editingOrderId = String(id ?? '');
+            orderEditorCashier.value = String(target?.cashierName ?? '').trim() || (target?.userEmail ? String(target.userEmail).split('@')[0] : '');
+            hideOrderEditorError();
+            orderEditorModal.style.display = 'flex';
+            orderEditorCashier.focus();
+        };
+
+        const formatOrderTime = (ts) => {
+            try {
+                const d = typeof ts?.toDate === 'function'
+                    ? ts.toDate()
+                    : (Number.isFinite(Number(ts?.seconds)) ? new Date(Number(ts.seconds) * 1000) : null);
+                if (!d) return '-';
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            } catch {
+                return '-';
+            }
+        };
+
+        const renderOrdersRows = (orders, tbodyEl = ordersTbody) => {
+            if (!tbodyEl) return;
+            const rows = orders.map((o) => {
+                const time = escapeHtml(formatOrderTime(o?.createdAt));
+                const payment = escapeHtml(String(o?.paymentName ?? '-') || '-');
+                const cashier = (() => {
+                    const c = String(o?.cashierName ?? '').trim();
+                    if (c) return escapeHtml(c);
+                    const email = String(o?.userEmail ?? '').trim();
+                    if (email) return escapeHtml(email.split('@')[0]);
+                    return '-';
+                })();
+                const subtotal = Number(o?.subtotal ?? 0) || 0;
+                const discountAmount = Number(o?.discountAmount ?? 0) || 0;
+                const tax = Number(o?.tax ?? 0) || 0;
+                const total = Number(o?.total ?? 0) || 0;
+                const id = escapeHtml(String(o?.id ?? ''));
+                const items = Array.isArray(o?.items) ? o.items : [];
+                const itemsHtml = items.map((i) => {
+                    const name = escapeHtml(String(i?.name ?? ''));
+                    const qty = Number(i?.qty ?? 0) || 0;
+                    const price = Number(i?.price ?? 0) || 0;
+                    return `<div class="flex justify-between"><span>${name} x ${escapeHtml(qty)}</span><span>$ ${escapeHtml(price * qty)}</span></div>`;
+                }).join('') || `<div class="text-gray-500 text-sm">-</div>`;
+                const detailHtml = `
+                    <div class="space-y-1 text-sm text-gray-700">
+                        <div class="flex justify-between"><span>小計</span><span>$ ${escapeHtml(subtotal)}</span></div>
+                        <div class="flex justify-between"><span>折扣</span><span>${discountAmount ? `-$ ${escapeHtml(discountAmount)}` : '$ 0'}</span></div>
+                        <div class="flex justify-between"><span>服務費</span><span>$ ${escapeHtml(tax)}</span></div>
+                        <div class="flex justify-between font-black text-gray-900 pt-1 border-t"><span>實收</span><span>$ ${escapeHtml(total)}</span></div>
+                        <div class="pt-2 border-t space-y-1">${itemsHtml}</div>
+                    </div>
+                `;
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-gray-900">${time}</td>
+                        <td class="px-4 py-3 font-bold text-gray-900">${payment}</td>
+                        <td class="px-4 py-3 text-gray-900">$ ${escapeHtml(subtotal)}</td>
+                        <td class="px-4 py-3 text-gray-900">${discountAmount ? `-$ ${escapeHtml(discountAmount)}` : '$ 0'}</td>
+                        <td class="px-4 py-3 text-gray-900">$ ${escapeHtml(tax)}</td>
+                        <td class="px-4 py-3 font-black text-gray-900">$ ${escapeHtml(total)}</td>
+                        <td class="px-4 py-3">
+                            <button type="button" data-action="toggle-order" data-id="${id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">查看</button>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-gray-900">${cashier}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-action="edit-order" data-id="${id}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                <button type="button" data-action="delete-order" data-id="${id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                <button type="button" data-action="receipt-order" data-id="${id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">電子收據</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr data-detail="${id}" class="hidden">
+                        <td class="px-4 py-4 bg-gray-50" colspan="9">${detailHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbodyEl.innerHTML = rows || `
+                <tr>
+                    <td class="px-4 py-10 text-center text-gray-500" colspan="9">目前沒有付款明細。</td>
+                </tr>
+            `;
+        };
+
+        const openOrdersModal = async () => {
+            if (!ordersModal) return;
+            ordersModal.style.display = 'flex';
+            hideOrdersNotice();
+            if (ordersTbody) {
+                ordersTbody.innerHTML = `
+                    <tr>
+                        <td class="px-4 py-10 text-center text-gray-500" colspan="9">載入中...</td>
+                    </tr>
+                `;
+            }
+            try {
+                const snap = await getDocs(collection(db, 'orders'));
+                const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                list.sort((a, b) => {
+                    const at = a?.createdAt?.seconds ?? 0;
+                    const bt = b?.createdAt?.seconds ?? 0;
+                    if (at !== bt) return bt - at;
+                    return String(b?.id ?? '').localeCompare(String(a?.id ?? ''));
+                });
+                ordersListCache = list;
+                renderOrdersRows(list);
+            } catch (err) {
+                ordersListCache = [];
+                renderOrdersRows([]);
+                showOrdersNotice(err?.message ?? '無法讀取付款明細。');
+            }
+        };
+
+        ordersBtn?.addEventListener('click', openOrdersModal);
+        ordersModalClose?.addEventListener('click', closeOrdersModal);
+        ordersModal?.addEventListener('click', (e) => { if (e.target === ordersModal) closeOrdersModal(); });
+        orderReceiptClose?.addEventListener('click', closeOrderReceiptModal);
+        orderReceiptModal?.addEventListener('click', (e) => { if (e.target === orderReceiptModal) closeOrderReceiptModal(); });
+        orderEditorClose?.addEventListener('click', closeOrderEditorModal);
+        orderEditorCancel?.addEventListener('click', closeOrderEditorModal);
+        orderEditorModal?.addEventListener('click', (e) => { if (e.target === orderEditorModal) closeOrderEditorModal(); });
+        orderEditorForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideOrderEditorError();
+            if (!editingOrderId) return;
+            if (orderEditorSave?.disabled) return;
+            const name = String(orderEditorCashier?.value ?? '').trim();
+            const prev = orderEditorSave?.innerText ?? '';
+            if (orderEditorSave) {
+                orderEditorSave.disabled = true;
+                orderEditorSave.classList.add('opacity-70');
+                orderEditorSave.innerText = '儲存中...';
+            }
+            try {
+                await updateDoc(doc(db, 'orders', String(editingOrderId)), {
+                    cashierName: name || null,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: currentUser?.uid ?? null
+                });
+                closeOrderEditorModal();
+                await openOrdersModal();
+            } catch (err) {
+                showOrderEditorError(err?.message ?? '儲存失敗，請稍後再試。');
+            } finally {
+                if (orderEditorSave) {
+                    orderEditorSave.disabled = false;
+                    orderEditorSave.classList.remove('opacity-70');
+                    orderEditorSave.innerText = prev || '儲存';
+                }
+            }
+        });
+        ordersTbody?.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('[data-action="toggle-order"]');
+            if (toggleBtn) {
+                const id = toggleBtn.getAttribute('data-id');
+                if (!id) return;
+                const row = ordersTbody.querySelector(`tr[data-detail="${CSS.escape(id)}"]`);
+                if (!row) return;
+                const nowHidden = row.classList.toggle('hidden');
+                toggleBtn.innerText = nowHidden ? '查看' : '收起';
+                return;
+            }
+            const receiptBtn = e.target.closest('[data-action="receipt-order"]');
+            if (receiptBtn) {
+                const id = receiptBtn.getAttribute('data-id');
+                if (!id) return;
+                openOrderReceiptModal(id);
+                return;
+            }
+            const editBtn = e.target.closest('[data-action="edit-order"]');
+            if (editBtn) {
+                const id = editBtn.getAttribute('data-id');
+                if (!id) return;
+                openOrderEditorModal(id);
+                return;
+            }
+            const deleteBtn = e.target.closest('[data-action="delete-order"]');
+            if (deleteBtn) {
+                const id = deleteBtn.getAttribute('data-id');
+                if (!id) return;
+                (async () => {
+                    const target = ordersListCache.find((o) => String(o?.id ?? '') === String(id)) ?? null;
+                    const time = target ? formatOrderTime(target?.createdAt) : '-';
+                    const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除這筆訂單？（${time}）`, okText: '確認', cancelText: '取消' });
+                    if (!ok) return;
+                    try {
+                        await deleteOrderWithStockAdjust(id);
+                        await openOrdersModal();
+                    } catch (err) {
+                        showOrdersNotice(err?.message ?? '刪除失敗，請稍後再試。');
+                    }
+                })();
+                return;
+            }
+        });
 
         window.handleCheckout = async () => {
             if (!currentUser) {
                 alert("尚未登入，請先登入。");
                 return;
             }
-
-            const { subtotal, tax, total } = renderCart();
-            const btn = document.getElementById('checkout-btn');
-            btn.innerText = "正在儲存至雲端...";
-            btn.disabled = true;
-
-            try {
-                const orderData = {
-                    items: cart.map(i => ({ name: i.name, price: i.price, qty: i.quantity })),
-                    subtotal,
-                    tax,
-                    total,
-                    createdAt: serverTimestamp(),
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email ?? null
-                };
-
-                await addDoc(collection(db, 'orders'), orderData);
-
-                // 顯示成功 Modal
-                const receiptHtml = cart.map(i => `
-                    <div class="flex justify-between">
-                        <span>${i.name} x ${i.quantity}</span>
-                        <span>$ ${i.price * i.quantity}</span>
-                    </div>
-                `).join('') + `<div class="receipt-dashed mt-2 pt-2 flex justify-between font-bold text-gray-900"><span>實收</span><span>$ ${total}</span></div>`;
-                
-                document.getElementById('receipt-content').innerHTML = receiptHtml;
-                document.getElementById('success-modal').style.display = 'flex';
-                
-            } catch (err) {
-                console.error("儲存失敗", err);
-                alert("雲端儲存失敗，請檢查網路連線。");
-            } finally {
-                btn.innerText = "確認結帳並上傳雲端";
-                btn.disabled = false;
-            }
+            await openCheckoutModal();
         };
 
         window.closeModal = () => {
@@ -2615,6 +5219,109 @@
         document.getElementById('search-input').addEventListener('input', (e) => {
             searchQuery = e.target.value;
             renderProducts();
+        });
+
+        const formatDiscountLabelForCart = (d) => {
+            const name = String(d?.name ?? '').trim();
+            const type = String(d?.type ?? 'percent');
+            const value = Number(d?.value ?? 0) || 0;
+            if (type === 'amount') return `${name}（$ ${Math.round(value)}）`;
+            return `${name}（${Math.round(value)}%）`;
+        };
+
+        const cartDiscountBtn = document.getElementById('cart-discount-btn');
+        const cartDiscountModal = document.getElementById('cart-discount-modal');
+        const cartDiscountClose = document.getElementById('cart-discount-close');
+        const cartDiscountClear = document.getElementById('cart-discount-clear');
+        const cartDiscountTbody = document.getElementById('cart-discount-tbody');
+        const cartDiscountNotice = document.getElementById('cart-discount-notice');
+
+        const showCartDiscountNotice = (msg) => {
+            if (!cartDiscountNotice) return;
+            cartDiscountNotice.classList.remove('hidden');
+            cartDiscountNotice.innerText = msg;
+        };
+        const hideCartDiscountNotice = () => {
+            if (!cartDiscountNotice) return;
+            cartDiscountNotice.classList.add('hidden');
+            cartDiscountNotice.innerText = '';
+        };
+
+        const closeCartDiscountModal = () => {
+            if (!cartDiscountModal) return;
+            cartDiscountModal.style.display = 'none';
+        };
+
+        const renderCartDiscountRows = (list) => {
+            if (!cartDiscountTbody) return;
+            const rows = list.map((d) => {
+                const label = escapeHtml(formatDiscountLabelForCart(d));
+                const active = Boolean(d.active ?? true);
+                const status = active
+                    ? '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-black text-white">啟用</span>'
+                    : '<span class="inline-flex px-2 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-700 border border-gray-200">停用</span>';
+                const isSelected = String(appliedDiscountId ?? '') && String(appliedDiscountId) === String(d.id);
+                const action = active
+                    ? `<button data-action="${isSelected ? 'unselect' : 'select'}" data-id="${escapeHtml(d.id)}" class="${isSelected ? 'px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors' : 'px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors'}">${isSelected ? '取消' : '套用'}</button>`
+                    : '<span class="text-gray-500 text-xs">-</span>';
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-bold text-gray-900">${label}</td>
+                        <td class="px-4 py-3">${status}</td>
+                        <td class="px-4 py-3">${action}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            cartDiscountTbody.innerHTML = rows || `
+                <tr>
+                    <td class="px-4 py-10 text-center text-gray-500" colspan="3">目前沒有折扣資料。</td>
+                </tr>
+            `;
+        };
+
+        const openCartDiscountModal = async () => {
+            if (!cartDiscountModal) return;
+            cartDiscountModal.style.display = 'flex';
+            hideCartDiscountNotice();
+            if (cartDiscountTbody) {
+                cartDiscountTbody.innerHTML = `
+                    <tr>
+                        <td class="px-4 py-10 text-center text-gray-500" colspan="3">載入中...</td>
+                    </tr>
+                `;
+            }
+
+            try {
+                const snap = await getDocs(collection(db, 'discounts'));
+                const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() ?? {}) }));
+                discountsCache = list;
+                renderCartDiscountRows(list);
+            } catch (err) {
+                renderCartDiscountRows([]);
+                showCartDiscountNotice(err?.message ?? '無法讀取折扣資料。');
+            }
+        };
+
+        cartDiscountBtn?.addEventListener('click', openCartDiscountModal);
+        cartDiscountClose?.addEventListener('click', closeCartDiscountModal);
+        cartDiscountClear?.addEventListener('click', () => {
+            appliedDiscountId = null;
+            renderCart();
+            closeCartDiscountModal();
+        });
+        cartDiscountModal?.addEventListener('click', (e) => {
+            if (e.target === cartDiscountModal) closeCartDiscountModal();
+        });
+        cartDiscountTbody?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="select"], [data-action="unselect"]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            if (!id) return;
+            appliedDiscountId = action === 'unselect' ? null : id;
+            renderCart();
+            closeCartDiscountModal();
         });
 
         // 初始化渲染

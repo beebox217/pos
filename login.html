@@ -85,6 +85,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
@@ -98,6 +99,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         const modeLoginBtn = document.getElementById('mode-login');
         const modeRegisterBtn = document.getElementById('mode-register');
@@ -185,7 +187,25 @@
                 if (mode === 'login') {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    const u = cred?.user ?? null;
+                    if (u) {
+                        const name = email.split('@')[0] || '使用者';
+                        await setDoc(
+                            doc(db, 'accounts', u.uid),
+                            {
+                                name,
+                                role: '店員',
+                                avatarDataUrl: null,
+                                email: u.email ?? email,
+                                createdAt: serverTimestamp(),
+                                createdBy: u.uid,
+                                updatedAt: serverTimestamp(),
+                                updatedBy: u.uid
+                            },
+                            { merge: true }
+                        );
+                    }
                 }
                 window.location.replace('./index.html');
             } catch (err) {
