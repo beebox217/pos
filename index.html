@@ -169,14 +169,16 @@
                     </button>
                 </div>
                 <div class="p-6 flex flex-col gap-4 min-h-0">
-                    <div id="settings-tabs" class="grid grid-cols-2 sm:grid-cols-9 gap-3 shrink-0">
+                    <div id="settings-tabs" class="grid grid-cols-2 sm:grid-cols-11 gap-3 shrink-0">
                         <button data-tab="帳號" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-black text-white">帳號</button>
                         <button data-tab="金流" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">金流</button>
                         <button data-tab="品牌" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">品牌</button>
                         <button data-tab="類別" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">類別</button>
                         <button data-tab="商品" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">商品</button>
                         <button data-tab="庫存" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">庫存</button>
-                        <button data-tab="報表" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">報表</button>
+                        <button data-tab="進貨" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">進貨</button>
+                        <button data-tab="訂單" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">訂單</button>
+                        <button data-tab="帳務" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">帳務</button>
                         <button data-tab="折扣" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">折扣</button>
                         <button data-tab="設定" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">設定</button>
                     </div>
@@ -210,7 +212,7 @@
             apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
             authDomain: "beebox-pos.firebaseapp.com",
             projectId: "beebox-pos",
-            storageBucket: "beebox-pos.firebasestorage.app",
+            storageBucket: "beebox-pos.appspot.com",
             messagingSenderId: "408919901374",
             appId: "1:408919901374:web:119177a33c74a895334aef",
             measurementId: "G-27M2GQTTY0"
@@ -315,6 +317,8 @@
             currentUser = user;
             setAuthStatus({ name: user.email ? user.email.split('@')[0] : `ID:${user.uid.substring(0, 6)}`, avatarDataUrl: null });
             startCategoriesListSync();
+            startProductsListSync();
+            startBrandsListSync();
 
             (async () => {
                 try {
@@ -325,6 +329,12 @@
                         const avatarDataUrl = String(data.avatarDataUrl ?? '').trim() || null;
                         setAuthStatus({ name: displayName || '使用者', avatarDataUrl });
                         headerAccount = { id: user.uid, ...data };
+                        const role = getCurrentRole();
+                        if (role === '店員') {
+                            settingsBtn.style.display = 'none';
+                        } else {
+                            settingsBtn.style.display = '';
+                        }
                         return;
                     }
                 } catch { }
@@ -332,6 +342,12 @@
                 const fallbackName = user.displayName || (user.email ? user.email.split('@')[0] : `ID:${user.uid.substring(0, 6)}`);
                 setAuthStatus({ name: fallbackName || '使用者', avatarDataUrl: user.photoURL || null });
                 headerAccount = { id: user.uid, name: fallbackName || '使用者', role: '店員', avatarDataUrl: user.photoURL || null };
+                const role = getCurrentRole();
+                if (role === '店員') {
+                    settingsBtn.style.display = 'none';
+                } else {
+                    settingsBtn.style.display = '';
+                }
             })();
         });
 
@@ -505,11 +521,46 @@
             if (e.target === confirmModalEl) closeConfirm(false);
         });
 
+        const getCurrentRole = () => {
+            const r = String(headerAccount?.role ?? '').trim();
+            return r || '店員';
+        };
+        const getAllowedTabsForRole = () => {
+            const role = getCurrentRole();
+            if (role === '系統管理員') return Array.from(settingsTabsEl.querySelectorAll('button[data-tab]')).map(b => b.getAttribute('data-tab'));
+            if (role === '店長') return ['商品', '庫存', '進貨', '訂單', '折扣'];
+            return [];
+        };
+        const isTabAllowedForRole = (tab) => {
+            const allowed = getAllowedTabsForRole();
+            return allowed.length === 0 ? false : allowed.includes(tab);
+        };
+        const filterSettingsTabsByRole = () => {
+            const allowed = new Set(getAllowedTabsForRole());
+            const buttons = settingsTabsEl.querySelectorAll('button[data-tab]');
+            buttons.forEach((btn) => {
+                const tab = btn.getAttribute('data-tab');
+                if (allowed.size === 0) {
+                    btn.style.display = 'none';
+                } else if (allowed.has(tab)) {
+                    btn.style.display = '';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        };
         const openSettingsModal = () => {
+            const role = getCurrentRole();
+            if (role === '店員') return;
+            filterSettingsTabsByRole();
             settingsModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             const activeBtn = settingsTabsEl.querySelector('button[data-tab].bg-black');
-            const tab = activeBtn?.getAttribute('data-tab') ?? '帳號';
+            let tab = activeBtn?.getAttribute('data-tab') ?? '帳號';
+            if (!isTabAllowedForRole(tab)) {
+                const allowed = getAllowedTabsForRole();
+                tab = allowed[0] ?? '帳號';
+            }
             setSettingsTab(tab);
         };
 
@@ -536,6 +587,18 @@
                 (snapshot) => {
                     categoriesCache = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
                     if (typeof renderCategories === 'function') renderCategories();
+                },
+                () => { }
+            );
+        }
+
+        function startBrandsListSync() {
+            if (brandsListUnsub) return;
+            brandsListUnsub = onSnapshot(
+                collection(db, 'brands'),
+                (snapshot) => {
+                    brandsCache = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    if (typeof renderProducts === 'function') renderProducts();
                 },
                 () => { }
             );
@@ -573,6 +636,8 @@
         let categoryEditorMode = 'create';
         let editingCategoryId = null;
         let seededDefaultCategories = false;
+        let productsListUnsub = null;
+        let brandsListUnsub = null;
         let productsTabCache = null;
         let brandsUnsub = null;
         let brandsCache = [];
@@ -585,25 +650,39 @@
         };
 
         const renderProductsTab = () => {
-            if (!Array.isArray(productsTabCache)) {
-                productsTabCache = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).map(p => ({ ...p }));
-            }
+            productsTabCache = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).map(p => ({ ...p }));
 
+            let productsBrandFilter = '全部';
             const renderRows = () => {
-                const rows = productsTabCache.map((p) => {
+                productsTabCache = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).map(p => ({ ...p }));
+                const list = productsTabCache.filter((p) => {
+                    const b = String(p.brand ?? '').trim();
+                    if (!productsBrandFilter || productsBrandFilter === '全部') return true;
+                    return b === productsBrandFilter;
+                });
+                const rows = list.map((p) => {
                     const id = escapeHtml(p.id);
-                    const brand = escapeHtml(p.brand ?? '-');
+                    const rawBrand = String(p.brand ?? '').trim();
+                    const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === rawBrand);
+                    const brandLogo = brandDoc?.logoDataUrl ? escapeHtml(brandDoc.logoDataUrl) : '';
+                    const brand = escapeHtml(rawBrand || '-');
                     const category = escapeHtml(p.category ?? '-');
                     const name = escapeHtml(p.name ?? '');
                     const price = Number(p.price ?? 0);
                     const cost = p.costPrice != null ? Number(p.costPrice) : null;
-                    const emoji = escapeHtml(p.emoji ?? '');
                     const imageUrl = p.imageDataUrl ? escapeHtml(p.imageDataUrl) : (p.imageUrl ? escapeHtml(p.imageUrl) : '');
                     const bgColor = escapeHtml(p.bgColor ?? '#f3f4f6');
 
                     const imageHtml = imageUrl
                         ? `<img src="${imageUrl}" alt="${name}" class="w-10 h-10 rounded-2xl object-cover">`
                         : `<div class="w-10 h-10 rounded-2xl" style="background:${bgColor}; display:flex; align-items:center; justify-content:center;"><span class="text-2xl">${emoji || '🧾'}</span></div>`;
+
+                    const brandCell = `
+                        <div class="flex items-center gap-2">
+                            ${brandLogo ? `<img src="${brandLogo}" alt="${brand}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : `<span class="inline-flex w-5 h-5 rounded-full bg-gray-200 text-[10px] items-center justify-center">${(rawBrand || '-').slice(0,1).toUpperCase()}</span>`}
+                            <span class="text-gray-900 font-bold">${brand}</span>
+                        </div>
+                    `;
 
                     const colorSwatch = `
                         <div class="flex items-center gap-2">
@@ -615,7 +694,7 @@
                     return `
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-gray-700">${id}</td>
-                            <td class="px-4 py-3 text-gray-900 font-bold">${brand}</td>
+                            <td class="px-4 py-3">${brandCell}</td>
                             <td class="px-4 py-3 font-bold text-gray-900">${category}</td>
                             <td class="px-4 py-3">${imageHtml}</td>
                             <td class="px-4 py-3 text-gray-900">${name}</td>
@@ -645,7 +724,15 @@
             settingsContentEl.innerHTML = `
                 <div class="mt-4 space-y-4">
                     <div class="flex items-center justify-between gap-3">
-                        <div class="text-sm text-gray-600">目前商品清單（自動從前台商品資料產生）</div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm text-gray-600">目前商品清單（自動從前台商品資料產生）</div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-xs text-gray-500">品牌</div>
+                                <select id="products-brand-filter" class="px-3 py-2 rounded-2xl border border-gray-200 bg-white text-gray-900">
+                                    <option value="全部">全部</option>
+                                </select>
+                            </div>
+                        </div>
                         <button id="product-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
                             新增商品
                         </button>
@@ -701,17 +788,18 @@
                                         <input id="product-cost" type="number" min="0" step="1" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-emoji">Emoji</label>
-                                        <input id="product-emoji" type="text" maxlength="2" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="例如：🍔">
-                                    </div>
-                                    <div class="sm:col-span-2">
-                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-bg">底色</label>
-                                        <div class="flex items-center gap-3">
-                                            <input id="product-bg" type="color" class="w-12 h-10 rounded-xl border border-gray-200">
-                                            <input id="product-bg-hex" type="text" class="flex-1 px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="#f3f4f6">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-image">商品圖片</label>
+                                        <input id="product-image" type="file" accept="image/*" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                        <div class="mt-2 flex items-center gap-3">
+                                            <div id="product-image-preview-wrap" class="w-16 h-16 rounded-2xl border border-gray-200 overflow-hidden hidden bg-gray-100 flex items-center justify-center">
+                                                <img id="product-image-preview" alt="預覽" class="w-full h-full object-cover">
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                可上傳 png/jpg/webp，未上傳則以底色顯示。
+                                            </div>
                                         </div>
-                                        <div class="text-xs text-gray-500 mt-2">圖片未上傳時，將以底色+Emoji 作為預覽。</div>
                                     </div>
+                                    <!-- 已移除底色輸入設定 -->
                                 </div>
                                 <div id="product-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
                                 <div class="flex items-center justify-end gap-3 pt-2">
@@ -742,8 +830,11 @@
                     }
                     const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除此商品（編號：${id}）嗎？`, okText: '確認', cancelText: '取消' });
                     if (!ok) return;
-                    productsTabCache = productsTabCache.filter(p => String(p.id) !== String(id));
-                    renderRows();
+                    try {
+                        await deleteDoc(doc(db, 'products', String(id)));
+                    } catch (err) {
+                        alert(err?.message ?? '刪除失敗，請稍後再試。');
+                    }
                 });
             }
 
@@ -754,6 +845,7 @@
             const productEditorCancel = document.getElementById('product-editor-cancel');
             const productEditorForm = document.getElementById('product-editor-form');
             const productEditorError = document.getElementById('product-editor-error');
+            const productsBrandFilterEl = document.getElementById('products-brand-filter');
             const nameEl = document.getElementById('product-name');
             const catEl = document.getElementById('product-category');
             const brandEl = document.getElementById('product-brand');
@@ -761,10 +853,14 @@
             const brandListEl = document.getElementById('product-brand-list');
             const priceEl = document.getElementById('product-price');
             const costEl = document.getElementById('product-cost');
-            const emojiEl = document.getElementById('product-emoji');
+            const imageFileEl = document.getElementById('product-image');
             const bgEl = document.getElementById('product-bg');
             const bgHexEl = document.getElementById('product-bg-hex');
             const submitEl = document.getElementById('product-editor-submit');
+            const bgContainer = document.getElementById('product-bg-container');
+            const imagePreviewWrapEl = document.getElementById('product-image-preview-wrap');
+            const imagePreviewEl = document.getElementById('product-image-preview');
+            let imagePreviewObjectUrl = null;
             let productEditorMode = 'add';
             let editingProductId = null;
 
@@ -801,6 +897,10 @@
                 if (brandListEl) {
                     brandListEl.innerHTML = brands.map((name) => `<option value="${escapeHtml(name)}"></option>`).join('');
                 }
+                if (productsBrandFilterEl) {
+                    const opts = ['全部', ...brands];
+                    productsBrandFilterEl.innerHTML = opts.map((n) => `<option value="${escapeHtml(n)}"${n === productsBrandFilter ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+                }
             };
 
             const openProductEditor = async (mode = 'add', id = null) => {
@@ -818,10 +918,20 @@
                         brandEl.value = String(product.brand ?? '');
                         priceEl.value = product.price != null ? Number(product.price) : '';
                         costEl.value = product.costPrice != null ? Number(product.costPrice) : '';
-                        emojiEl.value = String(product.emoji ?? '');
                         const color = String(product.bgColor ?? '#f3f4f6') || '#f3f4f6';
-                        bgEl.value = color;
-                        bgHexEl.value = color;
+                        if (bgEl) bgEl.value = color;
+                        if (bgHexEl) bgHexEl.value = color;
+                        if (bgContainer) bgContainer.style.background = color;
+                        if (imagePreviewWrapEl && imagePreviewEl) {
+                            const url = String(product.imageDataUrl ?? product.imageUrl ?? '').trim();
+                            if (url) {
+                                imagePreviewEl.src = url;
+                                imagePreviewWrapEl.classList.remove('hidden');
+                            } else {
+                                imagePreviewEl.removeAttribute('src');
+                                imagePreviewWrapEl.classList.add('hidden');
+                            }
+                        }
                     } else {
                         productEditorError.classList.remove('hidden');
                         productEditorError.innerText = '找不到要編輯的商品。';
@@ -834,9 +944,14 @@
                     brandEl.value = '';
                     priceEl.value = '';
                     costEl.value = '';
-                    emojiEl.value = '';
-                    bgEl.value = '#f3f4f6';
-                    bgHexEl.value = '#f3f4f6';
+                    if (imageFileEl) imageFileEl.value = '';
+                    if (bgEl) bgEl.value = '#f3f4f6';
+                    if (bgHexEl) bgHexEl.value = '#f3f4f6';
+                    if (bgContainer) bgContainer.style.background = '#f3f4f6';
+                    if (imagePreviewWrapEl && imagePreviewEl) {
+                        imagePreviewEl.removeAttribute('src');
+                        imagePreviewWrapEl.classList.add('hidden');
+                    }
                 }
 
                 productEditorModal.style.display = 'flex';
@@ -850,13 +965,38 @@
             productEditorClose?.addEventListener('click', closeProductEditor);
             productEditorCancel?.addEventListener('click', closeProductEditor);
             productEditorModal?.addEventListener('click', (e) => { if (e.target === productEditorModal) closeProductEditor(); });
-            bgEl.addEventListener('input', () => { bgHexEl.value = bgEl.value; });
-            bgHexEl.addEventListener('input', () => {
-                const v = bgHexEl.value.trim();
-                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) bgEl.value = v;
+            if (bgEl) {
+                bgEl.addEventListener('input', () => { if (bgHexEl) bgHexEl.value = bgEl.value; if (bgContainer) bgContainer.style.background = bgEl.value; });
+            }
+            if (bgHexEl) {
+                bgHexEl.addEventListener('input', () => {
+                    const v = bgHexEl.value.trim();
+                    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) { if (bgEl) bgEl.value = v; if (bgContainer) bgContainer.style.background = v; }
+                });
+            }
+            imageFileEl?.addEventListener('change', () => {
+                if (!imagePreviewWrapEl || !imagePreviewEl) return;
+                if (imagePreviewObjectUrl) { URL.revokeObjectURL(imagePreviewObjectUrl); imagePreviewObjectUrl = null; }
+                const file = imageFileEl.files?.[0] ?? null;
+                if (file) {
+                    imagePreviewObjectUrl = URL.createObjectURL(file);
+                    imagePreviewEl.src = imagePreviewObjectUrl;
+                    imagePreviewWrapEl.classList.remove('hidden');
+                } else {
+                    imagePreviewEl.removeAttribute('src');
+                    imagePreviewWrapEl.classList.add('hidden');
+                }
             });
 
-            productEditorForm.addEventListener('submit', (e) => {
+            if (productsBrandFilterEl) {
+                productsBrandFilterEl.addEventListener('change', () => {
+                    const v = String(productsBrandFilterEl.value ?? '').trim();
+                    productsBrandFilter = v || '全部';
+                    renderRows();
+                });
+            }
+
+            productEditorForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (submitEl.disabled) return;
                 productEditorError.classList.add('hidden');
@@ -867,8 +1007,7 @@
                 const brand = brandEl.value.trim() || '-';
                 const price = Number(priceEl.value);
                 const costPrice = costEl.value ? Number(costEl.value) : null;
-                const emoji = emojiEl.value.trim();
-                const bgColor = bgEl.value || '#f3f4f6';
+                const bgColor = (bgEl?.value ?? '#f3f4f6');
 
                 if (!name || !category || !(price >= 0)) {
                     productEditorError.classList.remove('hidden');
@@ -883,27 +1022,32 @@
 
                 try {
                     if (productEditorMode === 'edit' && editingProductId != null) {
-                        const idx = productsTabCache.findIndex(p => String(p.id) === String(editingProductId));
-                        if (idx === -1) throw new Error('找不到要更新的商品。');
-                        const updated = { ...productsTabCache[idx], name, price, category, brand, costPrice, emoji, bgColor };
-                        productsTabCache[idx] = updated;
-                        if (Array.isArray(PRODUCTS)) {
-                            const pIdx = PRODUCTS.findIndex(p => String(p.id) === String(editingProductId));
-                            if (pIdx !== -1) PRODUCTS[pIdx] = { ...PRODUCTS[pIdx], ...updated };
+                        let imageDataUrl = null;
+                        const file = imageFileEl?.files?.[0] ?? null;
+                        if (file) {
+                            try {
+                                imageDataUrl = await resizeImageToDataUrl(file);
+                            } catch {}
                         }
+                        const payload = { name, price, category, brand, costPrice, bgColor, updatedAt: serverTimestamp(), updatedBy: currentUser?.uid ?? null };
+                        if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
+                        await updateDoc(doc(db, 'products', String(editingProductId)), payload);
                     } else {
-                        const maxId = productsTabCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+                        const maxId = (Array.isArray(PRODUCTS) ? PRODUCTS : []).reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
                         const newId = maxId + 1;
-                        const created = { id: newId, name, price, category, brand, costPrice, emoji, bgColor };
-                        productsTabCache.push(created);
-                        if (Array.isArray(PRODUCTS)) {
-                            PRODUCTS.push(created);
+                        let imageDataUrl = null;
+                        const file = imageFileEl?.files?.[0] ?? null;
+                        if (file) {
+                            try {
+                                imageDataUrl = await resizeImageToDataUrl(file);
+                            } catch {}
                         }
+                        const payload = { id: newId, name, price, category, brand, costPrice, bgColor, createdAt: serverTimestamp(), createdBy: currentUser?.uid ?? null };
+                        if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
+                        await setDoc(doc(db, 'products', String(newId)), payload);
                     }
-                    renderRows();
+                    if (typeof renderRows === 'function') renderRows();
                     closeProductEditor();
-                    if (typeof renderCategories === 'function') renderCategories();
-                    if (typeof renderProducts === 'function') renderProducts();
                 } catch (err) {
                     productEditorError.classList.remove('hidden');
                     productEditorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
@@ -1475,6 +1619,128 @@
             startBrandsWatch();
         };
 
+        const renderInventoryTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm text-gray-600">管理庫存</div>
+                            <div class="flex items-center gap-2">
+                                <div class="text-xs text-gray-500">品牌</div>
+                                <select id="inventory-brand-filter" class="px-3 py-2 rounded-2xl border border-gray-200 bg-white text-gray-900">
+                                    <option value="全部">全部</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">品牌</th>
+                                        <th class="text-left font-bold px-4 py-3">商品</th>
+                                        <th class="text-left font-bold px-4 py-3">庫存數量</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const el = document.getElementById('inventory-brand-filter');
+            if (el) {
+                const union = Array.from(new Set([
+                    ...brandsCache.map(b => String(b?.name ?? '').trim()).filter(Boolean),
+                    ...(Array.isArray(PRODUCTS) ? PRODUCTS : []).map(p => String(p.brand ?? '').trim()).filter(Boolean),
+                ])).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+                const opts = ['全部', ...union].map((n) => `<option value="${escapeHtml(n)}"${n === inventoryBrandFilter ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('');
+                el.innerHTML = opts;
+                el.addEventListener('change', () => {
+                    const v = String(el.value ?? '').trim();
+                    inventoryBrandFilter = v || '全部';
+                    renderInventory();
+                });
+            }
+            renderInventory();
+        };
+
+        const renderPurchasesTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">管理進貨</div>
+                        <button id="purchase-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增進貨
+                        </button>
+                    </div>
+
+                    <div id="purchases-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">進貨單</th>
+                                        <th class="text-left font-bold px-4 py-3">項目數量</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchases-tbody" class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="px-4 py-10 text-center text-gray-500" colspan="3">目前沒有進貨資料。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="purchase-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="purchase-editor-title" class="font-black tracking-wider">新增進貨</div>
+                                <button id="purchase-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="purchase-editor-form" class="p-6 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1" for="purchase-name">進貨單名稱</label>
+                                    <input id="purchase-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                </div>
+
+                                <div id="purchase-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="purchase-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="purchase-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const modal = document.getElementById('purchase-editor-modal');
+            const openEditor = () => {
+                modal.style.display = 'flex';
+            };
+            const closeEditor = () => {
+                modal.style.display = 'none';
+            };
+            document.getElementById('purchase-add-btn')?.addEventListener('click', openEditor);
+            document.getElementById('purchase-editor-close')?.addEventListener('click', closeEditor);
+            document.getElementById('purchase-editor-cancel')?.addEventListener('click', closeEditor);
+            modal?.addEventListener('click', (e) => { if (e.target === modal) closeEditor(); });
+            document.getElementById('purchase-editor-form')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                closeEditor();
+            });
+        };
         const renderAccountsTab = () => {
             settingsContentEl.innerHTML = `
                 <div class="mt-4 space-y-4">
@@ -1854,7 +2120,16 @@
             });
 
             const renderAccountsRows = () => {
-                const rows = accountsCache.map((a) => {
+                const roleOrder = { '系統管理員': 0, '店長': 1, '店員': 2 };
+                const sorted = [...accountsCache].sort((a, b) => {
+                    const ra = roleOrder[String(a.role ?? '').trim()] ?? 3;
+                    const rb = roleOrder[String(b.role ?? '').trim()] ?? 3;
+                    if (ra !== rb) return ra - rb;
+                    const an = String(a.name ?? '').trim();
+                    const bn = String(b.name ?? '').trim();
+                    return an.localeCompare(bn, 'zh-Hant');
+                });
+                const rows = sorted.map((a) => {
                     const name = escapeHtml(a.name);
                     const email = escapeHtml(a.email);
                     const phone = escapeHtml(a.phone);
@@ -1994,6 +2269,12 @@
         };
 
         const setSettingsTab = (tab) => {
+            if (!isTabAllowedForRole(tab)) {
+                const allowed = getAllowedTabsForRole();
+                const fallback = allowed[0];
+                if (!fallback) return;
+                tab = fallback;
+            }
             const buttons = settingsTabsEl.querySelectorAll('button[data-tab]');
             buttons.forEach((btn) => {
                 const active = btn.getAttribute('data-tab') === tab;
@@ -2019,6 +2300,19 @@
                 unmountAccountsTab();
                 if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderCategoriesTab();
+                return;
+            }
+            if (tab === '庫存') {
+                unmountAccountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderInventoryTab();
+                return;
+            }
+            if (tab === '進貨') {
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
+                renderPurchasesTab();
                 return;
             }
             if (tab === '品牌') {
@@ -2052,16 +2346,39 @@
         });
 
         // 3. 資料與狀態管理
-        const PRODUCTS = [
-            { id: 1, name: '經典牛肉漢堡', price: 150, category: '主食', emoji: '🍔' },
-            { id: 2, name: '紅醬義大利麵', price: 180, category: '主食', emoji: '🍝' },
-            { id: 3, name: '瑪格麗特披薩', price: 220, category: '主食', emoji: '🍕' },
-            { id: 4, name: '冰美式咖啡', price: 80, category: '飲品', emoji: '☕' },
-            { id: 5, name: '鮮奶茶', price: 95, category: '飲品', emoji: '🥤' },
-            { id: 6, name: '焦糖布丁', price: 70, category: '甜點', emoji: '🍮' },
-            { id: 7, name: '酥炸洋蔥圈', price: 65, category: '炸物', emoji: '🧅' },
-            { id: 8, name: '黃金脆薯', price: 60, category: '炸物', emoji: '🍟' },
-        ];
+        const PRODUCTS = [];
+
+        function startProductsListSync() {
+            if (productsListUnsub) return;
+            productsListUnsub = onSnapshot(
+                collection(db, 'products'),
+                (snapshot) => {
+                    const list = snapshot.docs.map((d) => {
+                        const data = d.data() ?? {};
+                        const fid = String(d.id);
+                        const id = Number.isFinite(Number(fid)) ? Number(fid) : (Number(data.id) || fid);
+                        return {
+                            id,
+                            name: String(data.name ?? ''),
+                            category: String(data.category ?? ''),
+                            brand: String(data.brand ?? '-') || '-',
+                            price: Number(data.price ?? 0),
+                            costPrice: data.costPrice != null ? Number(data.costPrice) : null,
+                            emoji: String(data.emoji ?? ''),
+                            bgColor: String(data.bgColor ?? '#f3f4f6') || '#f3f4f6',
+                            imageUrl: data.imageUrl ?? null,
+                            imageDataUrl: data.imageDataUrl ?? null
+                        };
+                    }).sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+                    PRODUCTS.length = 0;
+                    Array.prototype.push.apply(PRODUCTS, list);
+                    if (typeof renderCategories === 'function') renderCategories();
+                    if (typeof renderProducts === 'function') renderProducts();
+                    if (typeof renderInventory === 'function') renderInventory();
+                },
+                () => { }
+            );
+        }
 
         let cart = [];
         let currentCategory = '全部';
@@ -2108,13 +2425,75 @@
                 return matchCat && matchSearch;
             });
 
-            container.innerHTML = filtered.map(p => `
-                <div onclick="addToCart(${p.id})" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-300 hover:shadow-md cursor-pointer transition-all active:scale-95 flex flex-col items-center text-center group">
-                    <span class="w-20 aspect-square text-6xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">${p.emoji}</span>
-                    <span class="font-bold text-sm h-10 overflow-hidden line-clamp-2">${p.name}</span>
-                    <span class="text-gray-900 font-black mt-2 text-xl">$ ${p.price}</span>
-                </div>
-            `).join('');
+            container.innerHTML = filtered.map(p => {
+                const name = String(p.name ?? '');
+                const brandName = String(p.brand ?? '').trim();
+                const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === brandName);
+                const brandLogo = brandDoc?.logoDataUrl || null;
+                const imageUrl = p.imageDataUrl || p.imageUrl || null;
+                const imgMain = imageUrl
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" class="w-20 h-20 object-cover rounded-2xl">`
+                    : (brandLogo ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName || name)}" class="w-16 h-16 object-cover rounded-2xl">` : `<div class="w-20 aspect-square rounded-2xl bg-gray-100"></div>`);
+                const brandBadge = brandLogo
+                    ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName)}" class="absolute top-2 left-2 w-6 h-6 rounded-full object-cover border border-white shadow-sm">`
+                    : '';
+                return `
+                <div onclick="addToCart(${p.id})" class="relative bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-300 hover:shadow-md cursor-pointer transition-all active:scale-95 flex flex-col items-center text-center group">
+                    ${brandBadge}
+                    <span class="w-20 aspect-square flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">${imgMain}</span>
+                    <span class="font-bold text-sm overflow-hidden line-clamp-2 leading-normal pb-0.5 min-h-[1.8rem]">${escapeHtml(name)}</span>
+                    <span class="text-gray-900 font-black -mt-1 text-xl">$ ${escapeHtml(p.price)}</span>
+                </div>`;
+            }).join('');
+        }
+
+        let inventoryBrandFilter = '全部';
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-tbody');
+            if (!tbody) return;
+            if (!Array.isArray(PRODUCTS) || PRODUCTS.length === 0) {
+                tbody.innerHTML = `
+                    <tr class="hover:bg-white">
+                        <td class="px-4 py-6 text-gray-600" colspan="3">目前沒有商品。</td>
+                    </tr>
+                `;
+                return;
+            }
+            const source = PRODUCTS.filter((p) => {
+                const b = String(p.brand ?? '').trim();
+                if (!inventoryBrandFilter || inventoryBrandFilter === '全部') return true;
+                return b === inventoryBrandFilter;
+            });
+            const rows = source.map((p) => {
+                const name = String(p.name ?? '');
+                const rawBrand = String(p.brand ?? '').trim();
+                const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === rawBrand);
+                const brandLogo = brandDoc?.logoDataUrl ? escapeHtml(brandDoc.logoDataUrl) : '';
+                const brandCell = `
+                    <div class="flex items-center gap-2">
+                        ${brandLogo ? `<img src="${brandLogo}" alt="${escapeHtml(rawBrand)}" class="w-5 h-5 rounded-full object-cover border border-gray-200">` : `<span class="inline-flex w-5 h-5 rounded-full bg-gray-200 text-[10px] items-center justify-center">${(rawBrand || '-').slice(0,1).toUpperCase()}</span>`}
+                        <span class="text-gray-900 font-bold">${escapeHtml(rawBrand || '-')}</span>
+                    </div>
+                `;
+                const imageUrl = p.imageDataUrl || p.imageUrl || '';
+                const stock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+                const thumb = imageUrl
+                    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" class="w-10 h-10 object-cover rounded-2xl">`
+                    : `<div class="w-10 h-10 rounded-2xl bg-gray-100"></div>`;
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">${brandCell}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="shrink-0">${thumb}</div>
+                                <div class="font-bold text-gray-900 truncate max-w-[240px]">${escapeHtml(name)}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-900 font-bold">${escapeHtml(stock)}</td>
+                    </tr>
+                `;
+            }).join('');
+            tbody.innerHTML = rows;
         }
 
         function renderCart() {
@@ -2128,11 +2507,23 @@
                 `;
                 document.getElementById('checkout-btn').disabled = true;
             } else {
-                container.innerHTML = cart.map(item => `
+                container.innerHTML = cart.map(item => {
+                    const name = String(item.name ?? '');
+                    const brandName = String(item.brand ?? '').trim();
+                    const brandDoc = brandsCache.find(b => String(b.name ?? '').trim() === brandName);
+                    const brandLogo = brandDoc?.logoDataUrl || null;
+                    const imageUrl = item.imageDataUrl || item.imageUrl || null;
+                    const thumb = imageUrl
+                        ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(name)}" class="w-12 h-12 object-cover rounded-xl">`
+                        : (brandLogo ? `<img src="${escapeHtml(brandLogo)}" alt="${escapeHtml(brandName || name)}" class="w-10 h-10 object-cover rounded-xl">` : `<div class="w-12 h-12 rounded-xl bg-gray-100"></div>`);
+                    return `
                     <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-50">
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold text-sm truncate">${item.name}</div>
-                            <div class="text-gray-900 text-xs font-bold">$ ${item.price}</div>
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="shrink-0">${thumb}</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-sm truncate">${escapeHtml(name)}</div>
+                                <div class="text-gray-900 text-xs font-bold">$ ${escapeHtml(item.price)}</div>
+                            </div>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="updateQty(${item.id}, -1)" class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-900 font-bold">-</button>
@@ -2140,7 +2531,8 @@
                             <button onclick="updateQty(${item.id}, 1)" class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-900 font-bold">+</button>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
                 document.getElementById('checkout-btn').disabled = false;
             }
 
