@@ -1,0 +1,297 @@
+
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedPOS - 雲端銷售系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fee2e2; border-radius: 10px; }
+        .receipt-dashed { border-top: 2px dashed #e5e7eb; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app" class="flex flex-col h-screen overflow-hidden">
+        <!-- 導航欄 -->
+        <header class="bg-red-600 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-red-600 p-1.5 rounded-lg font-black text-xl">R</div>
+                <h1 class="text-xl font-bold tracking-wider">RedPOS 雲端系統</h1>
+            </div>
+            <div id="auth-status" class="text-xs bg-red-700 px-3 py-1 rounded-full opacity-80">
+                正在連線至雲端...
+            </div>
+        </header>
+
+        <main class="flex flex-1 overflow-hidden flex-col md:flex-row">
+            <!-- 左側：商品選擇 -->
+            <div class="flex-1 flex flex-col min-w-0 bg-white">
+                <!-- 搜尋與分類 -->
+                <div class="p-4 border-b space-y-3">
+                    <input type="text" id="search-input" placeholder="搜尋商品名稱..." 
+                        class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none transition-all">
+                    <div id="category-list" class="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
+                        <!-- 分類按鈕動態產生 -->
+                    </div>
+                </div>
+
+                <!-- 商品列表 -->
+                <div id="product-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 custom-scrollbar">
+                    <!-- 商品卡片動態產生 -->
+                </div>
+            </div>
+
+            <!-- 右側：購物車 -->
+            <aside class="w-full md:w-80 lg:w-96 bg-gray-50 border-l border-gray-200 flex flex-col shadow-inner">
+                <div class="p-4 bg-white border-b flex justify-between items-center">
+                    <h2 class="font-bold text-lg flex items-center">
+                        <span class="mr-2">🛒</span> 待結帳清單
+                    </h2>
+                    <button onclick="clearCart()" class="text-gray-400 hover:text-red-600 text-sm">清空</button>
+                </div>
+
+                <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <!-- 購物車品項動態產生 -->
+                </div>
+
+                <!-- 金額結算 -->
+                <div class="p-6 bg-white border-t border-gray-200 space-y-3">
+                    <div class="flex justify-between text-gray-500 text-sm">
+                        <span>小計</span>
+                        <span id="subtotal-display">$ 0</span>
+                    </div>
+                    <div class="flex justify-between text-gray-500 text-sm">
+                        <span>服務費 (5%)</span>
+                        <span id="tax-display">$ 0</span>
+                    </div>
+                    <div class="flex justify-between text-2xl font-black text-red-600 pt-2 border-t">
+                        <span>總額</span>
+                        <span id="total-display">$ 0</span>
+                    </div>
+                    <button id="checkout-btn" disabled onclick="handleCheckout()"
+                        class="w-full bg-red-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-red-700 disabled:bg-gray-300 transition-all shadow-lg active:scale-95 mt-4">
+                        確認結帳並上傳雲端
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <!-- 結帳成功 Modal -->
+        <div id="success-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-bounce-short">
+                <div class="bg-red-600 p-8 text-white text-center">
+                    <div class="text-5xl mb-4">✅</div>
+                    <h3 class="text-2xl font-bold">結帳成功！</h3>
+                    <p class="opacity-80 text-sm mt-2">訂單資料已同步至 Firebase</p>
+                </div>
+                <div class="p-6">
+                    <div id="receipt-content" class="text-sm space-y-2 text-gray-600 mb-6"></div>
+                    <button onclick="closeModal()" class="w-full py-3 bg-gray-800 text-white rounded-xl font-bold hover:bg-black">開始下一筆訂單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 1. Firebase 初始化
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pos-app';
+
+        let currentUser = null;
+
+        // 2. 身份驗證 (Rule 3)
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth failed", err);
+                document.getElementById('auth-status').innerText = "連線失敗";
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('auth-status').innerText = `已連線 (ID: ${user.uid.substring(0,6)})`;
+            }
+        });
+
+        initAuth();
+
+        // 3. 資料與狀態管理
+        const PRODUCTS = [
+            { id: 1, name: '經典牛肉漢堡', price: 150, category: '主食', emoji: '🍔' },
+            { id: 2, name: '紅醬義大利麵', price: 180, category: '主食', emoji: '🍝' },
+            { id: 3, name: '瑪格麗特披薩', price: 220, category: '主食', emoji: '🍕' },
+            { id: 4, name: '冰美式咖啡', price: 80, category: '飲品', emoji: '☕' },
+            { id: 5, name: '鮮奶茶', price: 95, category: '飲品', emoji: '🥤' },
+            { id: 6, name: '焦糖布丁', price: 70, category: '甜點', emoji: '🍮' },
+            { id: 7, name: '酥炸洋蔥圈', price: 65, category: '炸物', emoji: '🧅' },
+            { id: 8, name: '黃金脆薯', price: 60, category: '炸物', emoji: '🍟' },
+        ];
+
+        let cart = [];
+        let currentCategory = '全部';
+        let searchQuery = '';
+
+        // 4. 渲染函式
+        function renderCategories() {
+            const cats = ['全部', ...new Set(PRODUCTS.map(p => p.category))];
+            const container = document.getElementById('category-list');
+            container.innerHTML = cats.map(cat => `
+                <button onclick="setCategory('${cat}')" 
+                    class="px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap
+                    ${currentCategory === cat ? 'bg-red-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('product-grid');
+            const filtered = PRODUCTS.filter(p => {
+                const matchCat = currentCategory === '全部' || p.category === currentCategory;
+                const matchSearch = p.name.includes(searchQuery);
+                return matchCat && matchSearch;
+            });
+
+            container.innerHTML = filtered.map(p => `
+                <div onclick="addToCart(${p.id})" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-red-300 hover:shadow-md cursor-pointer transition-all active:scale-95 flex flex-col items-center text-center group">
+                    <span class="text-4xl mb-2 group-hover:scale-110 transition-transform">${p.emoji}</span>
+                    <span class="font-bold text-sm h-10 overflow-hidden line-clamp-2">${p.name}</span>
+                    <span class="text-red-600 font-bold mt-2">$ ${p.price}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-gray-300 space-y-2 py-10">
+                        <span class="text-6xl">🛒</span>
+                        <p>購物車空空的</p>
+                    </div>
+                `;
+                document.getElementById('checkout-btn').disabled = true;
+            } else {
+                container.innerHTML = cart.map(item => `
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-50">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-sm truncate">${item.name}</div>
+                            <div class="text-red-600 text-xs font-bold">$ ${item.price}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateQty(${item.id}, -1)" class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-red-100 hover:text-red-600 font-bold">-</button>
+                            <span class="w-6 text-center text-sm font-bold">${item.quantity}</span>
+                            <button onclick="updateQty(${item.id}, 1)" class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-red-100 hover:text-red-600 font-bold">+</button>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('checkout-btn').disabled = false;
+            }
+
+            const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+            const tax = Math.round(subtotal * 0.05);
+            const total = subtotal + tax;
+
+            document.getElementById('subtotal-display').innerText = `$ ${subtotal}`;
+            document.getElementById('tax-display').innerText = `$ ${tax}`;
+            document.getElementById('total-display').innerText = `$ ${total}`;
+            return { subtotal, tax, total };
+        }
+
+        // 5. 互動邏輯 (掛載到 window 供 HTML 呼叫)
+        window.setCategory = (cat) => { currentCategory = cat; renderCategories(); renderProducts(); };
+        window.addToCart = (id) => {
+            const p = PRODUCTS.find(x => x.id === id);
+            const exist = cart.find(x => x.id === id);
+            if (exist) exist.quantity++;
+            else cart.push({ ...p, quantity: 1 });
+            renderCart();
+        };
+        window.updateQty = (id, delta) => {
+            const item = cart.find(x => x.id === id);
+            item.quantity += delta;
+            if (item.quantity <= 0) cart = cart.filter(x => x.id !== id);
+            renderCart();
+        };
+        window.clearCart = () => { cart = []; renderCart(); };
+
+        window.handleCheckout = async () => {
+            if (!currentUser) {
+                alert("尚未與雲端伺服器建立連線，請稍後再試。");
+                return;
+            }
+
+            const { subtotal, tax, total } = renderCart();
+            const btn = document.getElementById('checkout-btn');
+            btn.innerText = "正在儲存至雲端...";
+            btn.disabled = true;
+
+            try {
+                // 儲存至 Firebase (Rule 1)
+                const orderData = {
+                    items: cart.map(i => ({ name: i.name, price: i.price, qty: i.quantity })),
+                    total: total,
+                    timestamp: serverTimestamp(),
+                    userId: currentUser.uid
+                };
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), orderData);
+
+                // 顯示成功 Modal
+                const receiptHtml = cart.map(i => `
+                    <div class="flex justify-between">
+                        <span>${i.name} x ${i.quantity}</span>
+                        <span>$ ${i.price * i.quantity}</span>
+                    </div>
+                `).join('') + `<div class="receipt-dashed mt-2 pt-2 flex justify-between font-bold text-red-600"><span>實收</span><span>$ ${total}</span></div>`;
+                
+                document.getElementById('receipt-content').innerHTML = receiptHtml;
+                document.getElementById('success-modal').style.display = 'flex';
+                
+            } catch (err) {
+                console.error("儲存失敗", err);
+                alert("雲端儲存失敗，請檢查網路連線。");
+            } finally {
+                btn.innerText = "確認結帳並上傳雲端";
+                btn.disabled = false;
+            }
+        };
+
+        window.closeModal = () => {
+            document.getElementById('success-modal').style.display = 'none';
+            window.clearCart();
+        };
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderProducts();
+        });
+
+        // 初始化渲染
+        renderCategories();
+        renderProducts();
+        renderCart();
+
+    </script>
+</body>
+</html>
