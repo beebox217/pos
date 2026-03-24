@@ -28,6 +28,9 @@
                 <h1 class="text-xl font-bold tracking-wider">0423 POS平台</h1>
             </div>
             <div class="flex items-center gap-2">
+                <button id="settings-btn" class="text-xs px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
+                    設置
+                </button>
                 <div id="auth-status" class="text-xs bg-gray-800 px-3 py-1 rounded-full opacity-90">
                     正在驗證登入...
                 </div>
@@ -50,7 +53,7 @@
                 </div>
 
                 <!-- 商品列表 -->
-                <div id="product-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 custom-scrollbar">
+                <div id="product-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-4 grid-rows-3 gap-4 custom-scrollbar">
                     <!-- 商品卡片動態產生 -->
                 </div>
             </div>
@@ -61,7 +64,7 @@
                     <h2 class="font-bold text-lg flex items-center">
                         <span class="mr-2">🛒</span> 待結帳清單
                     </h2>
-                    <button onclick="clearCart()" class="text-gray-500 hover:text-gray-900 text-sm">清空</button>
+                    <button onclick="clearCart()" class="px-4 py-2 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">清空</button>
                 </div>
 
                 <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -104,13 +107,56 @@
                 </div>
             </div>
         </div>
+
+        <div id="confirm-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[70] p-4">
+            <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+                <div class="bg-black text-white px-6 py-4">
+                    <div id="confirm-title" class="font-black">確認動作</div>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="confirm-message" class="text-sm text-gray-700">確定要執行嗎？</div>
+                    <div class="flex items-center justify-end gap-3">
+                        <button id="confirm-cancel-btn" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">取消</button>
+                        <button id="confirm-ok-btn" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">確認</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
+            <div class="w-full h-full bg-white flex flex-col">
+                <div class="shrink-0 bg-black text-white px-6 py-4 flex items-center justify-between">
+                    <div class="font-black tracking-wider">設置</div>
+                    <button id="settings-close-btn" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">
+                        關閉
+                    </button>
+                </div>
+                <div class="p-6 flex flex-col gap-4 min-h-0">
+                    <div id="settings-tabs" class="grid grid-cols-2 sm:grid-cols-9 gap-3 shrink-0">
+                        <button data-tab="帳號" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-black text-white">帳號</button>
+                        <button data-tab="金流" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">金流</button>
+                        <button data-tab="品牌" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">品牌</button>
+                        <button data-tab="類別" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">類別</button>
+                        <button data-tab="商品" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">商品</button>
+                        <button data-tab="庫存" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">庫存</button>
+                        <button data-tab="報表" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">報表</button>
+                        <button data-tab="折扣" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">折扣</button>
+                        <button data-tab="設定" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">設定</button>
+                    </div>
+                    <div class="flex-1 min-h-0 overflow-auto rounded-3xl border border-gray-200 bg-gray-50 p-6">
+                        <div id="settings-content-title" class="text-lg font-black text-gray-900 sticky top-0 z-20 bg-gray-50">帳號</div>
+                        <div id="settings-content" class="text-sm text-gray-700 mt-2 leading-relaxed">此功能尚未建置。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
@@ -132,6 +178,7 @@
         const db = getFirestore(app);
 
         let currentUser = null;
+        let confirmResolver = null;
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -149,6 +196,1006 @@
             } finally {
                 window.location.replace('./login.html');
             }
+        });
+
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsCloseBtn = document.getElementById('settings-close-btn');
+        const settingsTabsEl = document.getElementById('settings-tabs');
+        const settingsContentTitleEl = document.getElementById('settings-content-title');
+        const settingsContentEl = document.getElementById('settings-content');
+        const confirmModalEl = document.getElementById('confirm-modal');
+        const confirmTitleEl = document.getElementById('confirm-title');
+        const confirmMessageEl = document.getElementById('confirm-message');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const confirmOkBtn = document.getElementById('confirm-ok-btn');
+
+        const openConfirm = ({ title, message, okText = '確認', cancelText = '取消' }) => {
+            confirmTitleEl.innerText = title || '確認動作';
+            confirmMessageEl.innerText = message || '確定要執行嗎？';
+            confirmOkBtn.innerText = okText;
+            confirmCancelBtn.innerText = cancelText;
+            confirmModalEl.style.display = 'flex';
+            return new Promise((resolve) => {
+                confirmResolver = resolve;
+            });
+        };
+
+        const closeConfirm = (result) => {
+            confirmModalEl.style.display = 'none';
+            const r = confirmResolver;
+            confirmResolver = null;
+            if (r) r(Boolean(result));
+        };
+
+        confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+        confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+        confirmModalEl.addEventListener('click', (e) => {
+            if (e.target === confirmModalEl) closeConfirm(false);
+        });
+
+        const openSettingsModal = () => {
+            settingsModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            const activeBtn = settingsTabsEl.querySelector('button[data-tab].bg-black');
+            const tab = activeBtn?.getAttribute('data-tab') ?? '帳號';
+            setSettingsTab(tab);
+        };
+
+        const closeSettingsModal = () => {
+            settingsModal.style.display = 'none';
+            document.body.style.overflow = '';
+            unmountAccountsTab();
+            unmountCategoriesTab();
+        };
+
+        const escapeHtml = (value) => {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        };
+
+        const bytesToBase64 = (bytes) => {
+            let binary = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
+        };
+
+        const sha256Base64 = async (text) => {
+            const data = new TextEncoder().encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return bytesToBase64(new Uint8Array(hashBuffer));
+        };
+
+        const generateSaltBase64 = () => {
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            return bytesToBase64(bytes);
+        };
+
+        let accountsUnsub = null;
+        let accountsCache = [];
+        let accountEditorMode = 'create';
+        let editingAccountId = null;
+        let seededDefaultAccount = false;
+        let accountsPermissionDenied = false;
+        let categoriesUnsub = null;
+        let categoriesCache = [];
+        let categoryEditorMode = 'create';
+        let editingCategoryId = null;
+        let seededDefaultCategories = false;
+        let productsTabCache = null;
+
+        const renderPlaceholder = (tab) => {
+            settingsContentEl.innerHTML = `<div class="text-sm text-gray-700 mt-2 leading-relaxed">此功能尚未建置。</div>`;
+        };
+
+        const renderProductsTab = () => {
+            if (!Array.isArray(productsTabCache)) {
+                productsTabCache = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []).map(p => ({ ...p }));
+            }
+
+            const renderRows = () => {
+                const rows = productsTabCache.map((p) => {
+                    const id = escapeHtml(p.id);
+                    const brand = escapeHtml(p.brand ?? '-');
+                    const category = escapeHtml(p.category ?? '-');
+                    const name = escapeHtml(p.name ?? '');
+                    const price = Number(p.price ?? 0);
+                    const cost = p.costPrice != null ? Number(p.costPrice) : null;
+                    const emoji = escapeHtml(p.emoji ?? '');
+                    const imageUrl = p.imageDataUrl ? escapeHtml(p.imageDataUrl) : (p.imageUrl ? escapeHtml(p.imageUrl) : '');
+                    const bgColor = escapeHtml(p.bgColor ?? '#f3f4f6');
+
+                    const imageHtml = imageUrl
+                        ? `<img src="${imageUrl}" alt="${name}" class="w-10 h-10 rounded-2xl object-cover">`
+                        : `<div class="w-10 h-10 rounded-2xl" style="background:${bgColor}; display:flex; align-items:center; justify-content:center;"><span class="text-2xl">${emoji || '🧾'}</span></div>`;
+
+                    const colorSwatch = `
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-5 h-5 rounded-full border border-gray-200" style="background:${bgColor};"></span>
+                            <span class="text-xs text-gray-600">${bgColor}</span>
+                        </div>
+                    `;
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-gray-700">${id}</td>
+                            <td class="px-4 py-3 text-gray-900 font-bold">${brand}</td>
+                            <td class="px-4 py-3 font-bold text-gray-900">${category}</td>
+                            <td class="px-4 py-3">${imageHtml}</td>
+                            <td class="px-4 py-3 text-gray-900">${name}</td>
+                            <td class="px-4 py-3 font-bold text-gray-900">$ ${escapeHtml(price)}</td>
+                            <td class="px-4 py-3 text-gray-900">${cost != null ? `$ ${escapeHtml(cost)}` : '-'}</td>
+                            <td class="px-4 py-3">${colorSwatch}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${p.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${p.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const tbody = document.getElementById('products-tbody');
+                if (tbody) {
+                    tbody.innerHTML = rows || `
+                        <tr>
+                            <td colspan="9" class="px-4 py-10 text-center text-gray-500">目前沒有商品資料。</td>
+                        </tr>
+                    `;
+                }
+            };
+
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="text-sm text-gray-600">目前商品清單（自動從前台商品資料產生）</div>
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto">
+                            <table class="min-w-[1100px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">編號</th>
+                                        <th class="text-left font-bold px-4 py-3">品牌</th>
+                                        <th class="text-left font-bold px-4 py-3">類別</th>
+                                        <th class="text-left font-bold px-4 py-3">圖片</th>
+                                        <th class="text-left font-bold px-4 py-3">名稱</th>
+                                        <th class="text-left font-bold px-4 py-3">售價</th>
+                                        <th class="text-left font-bold px-4 py-3">成本價</th>
+                                        <th class="text-left font-bold px-4 py-3">底色</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const container = document.getElementById('settings-content');
+            const tbody = document.getElementById('products-tbody');
+            if (tbody) {
+                tbody.addEventListener('click', async (e) => {
+                    const editBtn = e.target.closest('[data-action="edit"]');
+                    const deleteBtn = e.target.closest('[data-action="delete"]');
+                    if (!editBtn && !deleteBtn) return;
+                    const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+                    if (editBtn) {
+                        alert('商品編輯尚未建置。');
+                        return;
+                    }
+                    const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除此商品（編號：${id}）嗎？`, okText: '確認', cancelText: '取消' });
+                    if (!ok) return;
+                    productsTabCache = productsTabCache.filter(p => String(p.id) !== String(id));
+                    renderRows();
+                });
+            }
+
+            renderRows();
+        };
+
+        const getProductCategoryCounts = () => {
+            const list = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []);
+            const counts = new Map();
+            list.forEach((p) => {
+                const key = String(p.category ?? '').trim();
+                if (!key) return;
+                counts.set(key, (counts.get(key) ?? 0) + 1);
+            });
+            return counts;
+        };
+
+        const renderCategoriesTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">管理產品類別</div>
+                        <button id="category-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增類別
+                        </button>
+                    </div>
+
+                    <div id="categories-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">類別</th>
+                                        <th class="text-left font-bold px-4 py-3">商品數量</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categories-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="category-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="category-editor-title" class="font-black tracking-wider">新增類別</div>
+                                <button id="category-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="category-editor-form" class="p-6 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1" for="category-name">類別名稱</label>
+                                    <input id="category-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                </div>
+
+                                <div id="category-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="category-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="category-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const addBtn = document.getElementById('category-add-btn');
+            const noticeEl = document.getElementById('categories-notice');
+            const tbody = document.getElementById('categories-tbody');
+            const editorModal = document.getElementById('category-editor-modal');
+            const editorTitle = document.getElementById('category-editor-title');
+            const editorClose = document.getElementById('category-editor-close');
+            const editorCancel = document.getElementById('category-editor-cancel');
+            const editorForm = document.getElementById('category-editor-form');
+            const editorError = document.getElementById('category-editor-error');
+            const nameEl = document.getElementById('category-name');
+
+            const openEditor = (mode, id) => {
+                categoryEditorMode = mode;
+                editingCategoryId = id ?? null;
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+
+                if (mode === 'edit' && id) {
+                    const category = categoriesCache.find((c) => c.id === id);
+                    editorTitle.innerText = '編輯類別';
+                    nameEl.value = category?.name ?? '';
+                } else {
+                    editorTitle.innerText = '新增類別';
+                    nameEl.value = '';
+                }
+
+                editorModal.style.display = 'flex';
+                nameEl.focus();
+            };
+
+            const closeEditor = () => {
+                editorModal.style.display = 'none';
+            };
+
+            const renderRows = () => {
+                const counts = getProductCategoryCounts();
+                const rows = [...categoriesCache].sort((a, b) => {
+                    const an = String(a?.name ?? '');
+                    const bn = String(b?.name ?? '');
+                    return an.localeCompare(bn, 'zh-Hant');
+                }).map((c) => {
+                    const name = escapeHtml(c.name);
+                    const count = counts.get(String(c.name ?? '').trim()) ?? 0;
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-bold text-gray-900">${name}</td>
+                            <td class="px-4 py-3 text-gray-900">${escapeHtml(count)}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${c.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                    <button data-action="delete" data-id="${c.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows || `
+                    <tr>
+                        <td colspan="3" class="px-4 py-10 text-center text-gray-500">目前沒有類別資料，請先新增。</td>
+                    </tr>
+                `;
+            };
+
+            addBtn.addEventListener('click', () => openEditor('create'));
+            editorClose.addEventListener('click', closeEditor);
+            editorCancel.addEventListener('click', closeEditor);
+            editorModal.addEventListener('click', (e) => {
+                if (e.target === editorModal) closeEditor();
+            });
+
+            tbody.addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('[data-action="edit"]');
+                const deleteBtn = e.target.closest('[data-action="delete"]');
+                if (!editBtn && !deleteBtn) return;
+                const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+
+                if (editBtn) {
+                    openEditor('edit', id);
+                    return;
+                }
+
+                const category = categoriesCache.find((c) => c.id === id);
+                const label = category?.name ?? id;
+                const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除類別：${label}？`, okText: '確認', cancelText: '取消' });
+                if (!ok) return;
+                await deleteDoc(doc(db, 'categories', id));
+            });
+
+            editorForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+
+                const name = nameEl.value.trim();
+                if (!name) return;
+
+                const normalized = name.toLowerCase();
+                const conflict = categoriesCache.some((c) => {
+                    const other = String(c.name ?? '').trim().toLowerCase();
+                    if (categoryEditorMode === 'edit' && c.id === editingCategoryId) return false;
+                    return other === normalized;
+                });
+                if (conflict) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '此類別名稱已存在。';
+                    return;
+                }
+
+                try {
+                    const payload = { name, updatedAt: serverTimestamp() };
+                    if (categoryEditorMode === 'edit' && editingCategoryId) {
+                        await updateDoc(doc(db, 'categories', editingCategoryId), payload);
+                    } else {
+                        const id = crypto.randomUUID();
+                        await setDoc(doc(db, 'categories', id), { ...payload, createdAt: serverTimestamp() });
+                    }
+                    closeEditor();
+                } catch (err) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                }
+            });
+
+            renderRows();
+
+            if (!categoriesUnsub) {
+                categoriesUnsub = onSnapshot(
+                    collection(db, 'categories'),
+                    async (snapshot) => {
+                        noticeEl.classList.add('hidden');
+                        noticeEl.innerText = '';
+                        categoriesCache = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+                        if (categoriesCache.length === 0 && !seededDefaultCategories) {
+                            seededDefaultCategories = true;
+                            const counts = getProductCategoryCounts();
+                            const defaults = Array.from(counts.keys());
+                            if (defaults.length) {
+                                categoriesCache = defaults.map((name) => ({ id: `seed-${name}`, name }));
+                                renderRows();
+                                try {
+                                    await Promise.all(defaults.map((name) => {
+                                        const id = crypto.randomUUID();
+                                        return setDoc(doc(db, 'categories', id), { name, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+                                    }));
+                                } catch (err) {
+                                    seededDefaultCategories = false;
+                                }
+                            }
+                        }
+
+                        renderRows();
+                    },
+                    (error) => {
+                        categoriesCache = [];
+                        noticeEl.classList.remove('hidden');
+                        noticeEl.innerText = `無法讀取類別資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`;
+                        renderRows();
+                    }
+                );
+            }
+        };
+
+        const renderAccountsTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3 sticky top-10 z-10 bg-gray-50">
+                        <div class="text-sm text-gray-600">管理內部使用者帳號</div>
+                        <button id="account-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增帳號
+                        </button>
+                    </div>
+
+                    <div id="accounts-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto">
+                            <table class="min-w-[1000px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">大頭照</th>
+                                        <th class="text-left font-bold px-4 py-3">姓名</th>
+                                        <th class="text-left font-bold px-4 py-3">電子郵件</th>
+                                        <th class="text-left font-bold px-4 py-3">手機號碼</th>
+                                        <th class="text-left font-bold px-4 py-3">角色</th>
+                                        <th class="text-left font-bold px-4 py-3">密碼</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="accounts-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="account-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="account-editor-title" class="font-black tracking-wider">新增帳號</div>
+                                <button id="account-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="account-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-name">姓名</label>
+                                        <input id="account-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-role">角色</label>
+                                        <select id="account-role" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                            <option value="系統管理員">系統管理員</option>
+                                            <option value="店長">店長</option>
+                                            <option value="店員">店員</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-email">電子郵件</label>
+                                        <input id="account-email" type="email" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-phone">手機號碼</label>
+                                        <input id="account-phone" type="tel" placeholder="09xxxxxxxx" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-avatar-file">大頭照</label>
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-14 h-14 rounded-full bg-gray-200 text-gray-900 font-black flex items-center justify-center overflow-hidden shrink-0">
+                                                <img id="account-avatar-preview" alt="avatar" class="w-full h-full object-cover hidden">
+                                                <span id="account-avatar-fallback">?</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <input id="account-avatar-file" type="file" accept="image/*" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:bg-gray-100 file:text-gray-900 file:font-bold hover:file:bg-gray-200 transition-colors">
+                                                <input id="account-avatar-data" type="hidden">
+                                                <div class="mt-2">
+                                                    <button id="account-avatar-remove" type="button" class="px-3 py-2 rounded-2xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                                        移除圖片
+                                                    </button>
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-2">圖片會直接存入資料庫（建議 256×256 以內）。</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="account-password">密碼</label>
+                                        <div class="relative">
+                                            <input id="account-password" type="password" autocomplete="new-password" class="w-full pr-24 px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                            <button id="account-password-toggle" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl text-xs font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                                顯示
+                                            </button>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-2">不會以明文儲存。留空表示不變更。</div>
+                                    </div>
+                                </div>
+
+                                <div id="account-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="account-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="account-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const accountEditorModal = document.getElementById('account-editor-modal');
+            const accountEditorTitle = document.getElementById('account-editor-title');
+            const accountEditorClose = document.getElementById('account-editor-close');
+            const accountEditorCancel = document.getElementById('account-editor-cancel');
+            const accountEditorForm = document.getElementById('account-editor-form');
+            const accountEditorError = document.getElementById('account-editor-error');
+            const addBtn = document.getElementById('account-add-btn');
+            const tbody = document.getElementById('accounts-tbody');
+            const noticeEl = document.getElementById('accounts-notice');
+            const nameEl = document.getElementById('account-name');
+            const roleEl = document.getElementById('account-role');
+            const emailEl = document.getElementById('account-email');
+            const phoneEl = document.getElementById('account-phone');
+            const passwordEl = document.getElementById('account-password');
+            const passwordToggleEl = document.getElementById('account-password-toggle');
+            const avatarFileEl = document.getElementById('account-avatar-file');
+            const avatarDataEl = document.getElementById('account-avatar-data');
+            const avatarPreviewEl = document.getElementById('account-avatar-preview');
+            const avatarFallbackEl = document.getElementById('account-avatar-fallback');
+            const avatarRemoveBtn = document.getElementById('account-avatar-remove');
+            const submitBtn = document.getElementById('account-editor-submit');
+
+            const setAvatarUI = (dataUrl, fallbackText) => {
+                avatarFallbackEl.innerText = fallbackText || '?';
+                if (dataUrl) {
+                    avatarPreviewEl.src = dataUrl;
+                    avatarPreviewEl.classList.remove('hidden');
+                    avatarFallbackEl.classList.add('hidden');
+                    return;
+                }
+                avatarPreviewEl.removeAttribute('src');
+                avatarPreviewEl.classList.add('hidden');
+                avatarFallbackEl.classList.remove('hidden');
+            };
+
+            const resizeImageToDataUrl = async (file) => {
+                const maxSize = 256;
+                const url = URL.createObjectURL(file);
+                try {
+                    const img = await new Promise((resolve, reject) => {
+                        const el = new Image();
+                        el.onload = () => resolve(el);
+                        el.onerror = () => reject(new Error('讀取圖片失敗'));
+                        el.src = url;
+                    });
+
+                    const scale = Math.min(1, maxSize / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+                    const targetW = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+                    const targetH = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) throw new Error('瀏覽器不支援圖片處理');
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                    try {
+                        return canvas.toDataURL('image/webp', 0.85);
+                    } catch {
+                        return canvas.toDataURL('image/jpeg', 0.85);
+                    }
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            };
+
+            const openEditor = (mode, id) => {
+                if (accountsPermissionDenied) {
+                    noticeEl.classList.remove('hidden');
+                    noticeEl.innerText = '目前 Firestore 權限不足，暫時無法新增/編輯/刪除帳號。請調整 Firestore Rules 後再試。';
+                    return;
+                }
+                accountEditorMode = mode;
+                editingAccountId = id ?? null;
+                accountEditorError.classList.add('hidden');
+                accountEditorError.innerText = '';
+                let passwordVisible = false;
+                const updatePasswordVis = () => {
+                    passwordEl.type = passwordVisible ? 'text' : 'password';
+                    passwordToggleEl.innerText = passwordVisible ? '隱藏' : '顯示';
+                };
+                updatePasswordVis();
+                passwordToggleEl.onclick = () => {
+                    passwordVisible = !passwordVisible;
+                    updatePasswordVis();
+                };
+
+                if (mode === 'edit') {
+                    const account = accountsCache.find(a => a.id === id);
+                    const fallbackText = (account?.name || account?.email || '?').trim().slice(0, 1).toUpperCase();
+                    accountEditorTitle.innerText = '編輯帳號';
+                    nameEl.value = account?.name ?? '';
+                    roleEl.value = account?.role ?? '店員';
+                    emailEl.value = account?.email ?? '';
+                    phoneEl.value = account?.phone ?? '';
+                    passwordEl.value = '';
+                    avatarFileEl.value = '';
+                    avatarDataEl.value = account?.avatarDataUrl ?? '';
+                    setAvatarUI(avatarDataEl.value, fallbackText);
+                } else {
+                    accountEditorTitle.innerText = '新增帳號';
+                    nameEl.value = '';
+                    roleEl.value = '店員';
+                    emailEl.value = '';
+                    phoneEl.value = '';
+                    passwordEl.value = '';
+                    avatarFileEl.value = '';
+                    avatarDataEl.value = '';
+                    setAvatarUI('', '?');
+                }
+
+                accountEditorModal.style.display = 'flex';
+            };
+
+            const closeEditor = () => {
+                accountEditorModal.style.display = 'none';
+            };
+
+            avatarFileEl.addEventListener('change', async () => {
+                accountEditorError.classList.add('hidden');
+                accountEditorError.innerText = '';
+
+                const file = avatarFileEl.files?.[0];
+                if (!file) return;
+
+                if (file.size > 1024 * 1024) {
+                    avatarFileEl.value = '';
+                    accountEditorError.classList.remove('hidden');
+                    accountEditorError.innerText = '圖片檔案過大，請選擇 1MB 以內的圖片。';
+                    return;
+                }
+
+                try {
+                    const dataUrl = await resizeImageToDataUrl(file);
+                    if (dataUrl.length > 250000) {
+                        avatarFileEl.value = '';
+                        accountEditorError.classList.remove('hidden');
+                        accountEditorError.innerText = '圖片資料過大，請換一張較小的圖片或裁切後再上傳。';
+                        return;
+                    }
+                    avatarDataEl.value = dataUrl;
+                    setAvatarUI(dataUrl, '?');
+                } catch (err) {
+                    avatarFileEl.value = '';
+                    accountEditorError.classList.remove('hidden');
+                    accountEditorError.innerText = err?.message ?? '圖片處理失敗，請改用其他圖片。';
+                }
+            });
+
+            avatarRemoveBtn.addEventListener('click', () => {
+                avatarFileEl.value = '';
+                avatarDataEl.value = '';
+                setAvatarUI('', '?');
+            });
+
+            addBtn.addEventListener('click', () => openEditor('create'));
+            accountEditorClose.addEventListener('click', closeEditor);
+            accountEditorCancel.addEventListener('click', closeEditor);
+            accountEditorModal.addEventListener('click', (e) => {
+                if (e.target === accountEditorModal) closeEditor();
+            });
+
+            tbody.addEventListener('click', async (e) => {
+                if (accountsPermissionDenied) return;
+                const editBtn = e.target.closest('[data-action="edit"]');
+                const deleteBtn = e.target.closest('[data-action="delete"]');
+                if (!editBtn && !deleteBtn) return;
+                const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+
+                if (editBtn) {
+                    openEditor('edit', id);
+                    return;
+                }
+
+                const account = accountsCache.find(a => a.id === id);
+                const label = account?.email ?? id;
+                const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除帳號：${label}？`, okText: '確認', cancelText: '取消' });
+                if (!ok) return;
+                await deleteDoc(doc(db, 'accounts', id));
+            });
+
+            accountEditorForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                accountEditorError.classList.add('hidden');
+                accountEditorError.innerText = '';
+                if (accountsPermissionDenied) return;
+                if (submitBtn.disabled) return;
+
+                const name = document.getElementById('account-name').value.trim();
+                const role = document.getElementById('account-role').value;
+                const email = document.getElementById('account-email').value.trim();
+                const phone = document.getElementById('account-phone').value.trim();
+                const avatarDataUrl = document.getElementById('account-avatar-data').value.trim();
+                const password = document.getElementById('account-password').value;
+
+                try {
+                    if (!name || !email) throw new Error('請填寫姓名與電子郵件。');
+                    if (accountEditorMode !== 'edit') {
+                        const dup = accountsCache.some(a => String(a.email ?? '').trim().toLowerCase() === email.toLowerCase());
+                        if (dup) throw new Error('此電子郵件已存在，請改用其他 Email。');
+                    }
+
+                    submitBtn.disabled = true;
+                    const prev = submitBtn.innerText;
+                    submitBtn.dataset.prevText = prev;
+                    submitBtn.innerText = '儲存中...';
+                    submitBtn.classList.add('opacity-70');
+
+                    const payload = {
+                        name,
+                        role,
+                        email,
+                        phone,
+                        avatarDataUrl: avatarDataUrl || null,
+                        updatedAt: serverTimestamp()
+                    };
+
+                    if (accountEditorMode === 'edit' && editingAccountId) {
+                        const original = accountsCache.find(a => a.id === editingAccountId);
+                        const originalEmail = String(original?.email ?? '').trim();
+                        if (email !== originalEmail) throw new Error('編輯帳號目前不支援修改電子郵件。');
+                        if (password) throw new Error('編輯帳號目前不支援修改登入密碼。');
+                        await updateDoc(doc(db, 'accounts', editingAccountId), payload);
+                    } else {
+                        if (!password || password.length < 6) throw new Error('請設定至少 6 碼密碼，才能註冊登入。');
+
+                        let secondaryApp;
+                        try {
+                            secondaryApp = getApp('secondary-auth');
+                        } catch {
+                            secondaryApp = initializeApp(firebaseConfig, 'secondary-auth');
+                        }
+                        const secondaryAuth = getAuth(secondaryApp);
+                        await setPersistence(secondaryAuth, inMemoryPersistence);
+
+                        const userCred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                        const uid = userCred.user.uid;
+
+                        payload.authUid = uid;
+                        payload.passwordSetAt = serverTimestamp();
+                        payload.createdBy = currentUser?.uid ?? null;
+
+                        await setDoc(doc(db, 'accounts', uid), { ...payload, createdAt: serverTimestamp() });
+                        await signOut(secondaryAuth);
+                    }
+
+                    closeEditor();
+                } catch (err) {
+                    const code = err?.code;
+                    const map = {
+                        'auth/email-already-in-use': '此 Email 已被註冊，請換一個 Email。',
+                        'auth/invalid-email': 'Email 格式不正確。',
+                        'auth/weak-password': '密碼強度不足，請使用至少 6 碼。',
+                        'auth/operation-not-allowed': '此 Firebase 專案尚未啟用 Email/Password 登入方式，請到 Firebase Console → Authentication → Sign-in method 啟用。',
+                        'auth/configuration-not-found': 'Firebase Authentication 尚未完成啟用或設定，請到 Firebase Console → Authentication 先「開始使用」並啟用 Email/Password。'
+                    };
+                    accountEditorError.classList.remove('hidden');
+                    accountEditorError.innerText = map[code] ?? (err?.message ?? '儲存失敗，請稍後再試。');
+                } finally {
+                    // 若視窗尚未關閉（例如出錯），還原按鈕狀態
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        if (submitBtn.dataset.prevText) {
+                            submitBtn.innerText = submitBtn.dataset.prevText;
+                            delete submitBtn.dataset.prevText;
+                        }
+                        submitBtn.classList.remove('opacity-70');
+                    }
+                }
+            });
+
+            const renderAccountsRows = () => {
+                const rows = accountsCache.map((a) => {
+                    const name = escapeHtml(a.name);
+                    const email = escapeHtml(a.email);
+                    const phone = escapeHtml(a.phone);
+                    const role = escapeHtml(a.role);
+                    const avatarDataUrl = a.avatarDataUrl ? escapeHtml(a.avatarDataUrl) : '';
+                    const avatarUrl = avatarDataUrl || (a.avatarUrl ? escapeHtml(a.avatarUrl) : '');
+                    const initial = escapeHtml((a.name || a.email || '?').trim().slice(0, 1).toUpperCase());
+                    const hasPassword = Boolean(a.passwordHash || a.passwordSetAt || a.passwordConfigured);
+                    const passwordLabel = hasPassword ? '••••••' : '-';
+                    const readonly = Boolean(a._readonly);
+
+                    const avatarHtml = avatarUrl
+                        ? `<img src="${avatarUrl}" class="w-9 h-9 rounded-full object-cover" onerror="this.remove(); this.parentElement.querySelector('[data-fallback]').classList.remove('hidden')">`
+                        : '';
+
+                    const actionsHtml = readonly
+                        ? `<span class="text-gray-500 text-xs">-</span>`
+                        : `
+                            <div class="flex items-center gap-2">
+                                <button data-action="edit" data-id="${a.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors">編輯</button>
+                                <button data-action="delete" data-id="${a.id}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">刪除</button>
+                            </div>
+                        `;
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <div class="w-9 h-9 rounded-full bg-gray-200 text-gray-900 font-black flex items-center justify-center overflow-hidden">
+                                    ${avatarHtml}
+                                    <span data-fallback class="${avatarUrl ? 'hidden' : ''}">${initial}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 font-bold text-gray-900">${name}</td>
+                            <td class="px-4 py-3 text-gray-700">${email}</td>
+                            <td class="px-4 py-3 text-gray-700">${phone || '-'}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-900 border border-gray-200">${role || '-'}</span>
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-700">${passwordLabel}</td>
+                            <td class="px-4 py-3">
+                                ${actionsHtml}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.innerHTML = rows || `
+                    <tr>
+                        <td colspan="7" class="px-4 py-10 text-center text-gray-500">尚無帳號資料，請先新增。</td>
+                    </tr>
+                `;
+            };
+
+            renderAccountsRows();
+
+            if (!accountsUnsub) {
+                accountsUnsub = onSnapshot(
+                    collection(db, 'accounts'),
+                    async (snapshot) => {
+                        accountsPermissionDenied = false;
+                        noticeEl.classList.add('hidden');
+                        noticeEl.innerText = '';
+                        addBtn.disabled = false;
+                        addBtn.className = 'px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors';
+                        accountsCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                        if (accountsCache.length === 0 && currentUser?.uid && currentUser?.email && !seededDefaultAccount) {
+                            seededDefaultAccount = true;
+                            const emailPrefix = String(currentUser.email).split('@')[0] || '使用者';
+                            const payload = {
+                                name: currentUser.displayName ?? emailPrefix,
+                                role: '系統管理員',
+                                email: currentUser.email,
+                                phone: '',
+                                avatarUrl: currentUser.photoURL ?? null,
+                                authUid: currentUser.uid,
+                                createdAt: serverTimestamp(),
+                                updatedAt: serverTimestamp()
+                            };
+
+                            accountsCache = [{ id: currentUser.uid, ...payload }];
+                            renderAccountsRows();
+
+                            try {
+                                await setDoc(doc(db, 'accounts', currentUser.uid), payload, { merge: true });
+                            } catch (err) {
+                                seededDefaultAccount = false;
+                            }
+                        }
+
+                        renderAccountsRows();
+                    },
+                    (error) => {
+                        if (error?.code === 'permission-denied') {
+                            accountsPermissionDenied = true;
+                            addBtn.disabled = true;
+                            addBtn.className = 'px-4 py-2 rounded-2xl font-bold bg-gray-300 text-gray-700 cursor-not-allowed';
+                            noticeEl.classList.remove('hidden');
+                            noticeEl.innerText = '目前帳號資料權限不足，已先改為僅顯示目前登入者；如需完整帳號管理（新增/編輯/刪除），請到 Firebase Console 調整 Firestore Rules 允許登入者讀寫 accounts。';
+                            const emailPrefix = String(currentUser?.email ?? '').split('@')[0] || '使用者';
+                            accountsCache = [{
+                                id: currentUser?.uid ?? 'current-user',
+                                name: currentUser?.displayName ?? emailPrefix,
+                                role: '系統管理員',
+                                email: currentUser?.email ?? '',
+                                phone: '',
+                                avatarUrl: currentUser?.photoURL ?? null,
+                                authUid: currentUser?.uid ?? null,
+                                passwordHash: null,
+                                _readonly: true
+                            }];
+                            renderAccountsRows();
+                            return;
+                        }
+
+                        accountsCache = [];
+                        noticeEl.classList.remove('hidden');
+                        noticeEl.innerText = `無法讀取帳號資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`;
+                        renderAccountsRows();
+                    }
+                );
+            }
+        };
+
+        const unmountAccountsTab = () => {
+            if (accountsUnsub) {
+                accountsUnsub();
+                accountsUnsub = null;
+            }
+        };
+
+        const unmountCategoriesTab = () => {
+            if (categoriesUnsub) {
+                categoriesUnsub();
+                categoriesUnsub = null;
+            }
+        };
+
+        const setSettingsTab = (tab) => {
+            const buttons = settingsTabsEl.querySelectorAll('button[data-tab]');
+            buttons.forEach((btn) => {
+                const active = btn.getAttribute('data-tab') === tab;
+                btn.className = active
+                    ? 'px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-black text-white'
+                    : 'px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50';
+            });
+            settingsContentTitleEl.innerText = tab;
+            if (tab === '帳號') {
+                unmountCategoriesTab();
+                renderAccountsTab();
+                return;
+            }
+            if (tab === '商品') {
+                unmountAccountsTab();
+                unmountCategoriesTab();
+                renderProductsTab();
+                return;
+            }
+            if (tab === '類別') {
+                unmountAccountsTab();
+                renderCategoriesTab();
+                return;
+            }
+            unmountAccountsTab();
+            unmountCategoriesTab();
+            renderPlaceholder(tab);
+        };
+
+        settingsBtn.addEventListener('click', openSettingsModal);
+        settingsCloseBtn.addEventListener('click', closeSettingsModal);
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) closeSettingsModal();
+        });
+        settingsTabsEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-tab]');
+            if (!btn) return;
+            setSettingsTab(btn.getAttribute('data-tab'));
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (confirmModalEl.style.display === 'flex') {
+                closeConfirm(false);
+                return;
+            }
+            if (settingsModal.style.display === 'flex') closeSettingsModal();
         });
 
         // 3. 資料與狀態管理
@@ -173,7 +1220,7 @@
             const container = document.getElementById('category-list');
             container.innerHTML = cats.map(cat => `
                 <button onclick="setCategory('${cat}')" 
-                    class="px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap
+                    class="px-5 py-2.5 rounded-full text-base font-bold transition-all whitespace-nowrap
                     ${currentCategory === cat ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
                     ${cat}
                 </button>
@@ -190,9 +1237,9 @@
 
             container.innerHTML = filtered.map(p => `
                 <div onclick="addToCart(${p.id})" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-300 hover:shadow-md cursor-pointer transition-all active:scale-95 flex flex-col items-center text-center group">
-                    <span class="text-4xl mb-2 group-hover:scale-110 transition-transform">${p.emoji}</span>
+                    <span class="w-20 aspect-square text-6xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">${p.emoji}</span>
                     <span class="font-bold text-sm h-10 overflow-hidden line-clamp-2">${p.name}</span>
-                    <span class="text-gray-900 font-bold mt-2">$ ${p.price}</span>
+                    <span class="text-gray-900 font-black mt-2 text-xl">$ ${p.price}</span>
                 </div>
             `).join('');
         }
