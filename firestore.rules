@@ -18,6 +18,10 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    match /brands/{brandId} {
+      allow read, write: if isSignedIn();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

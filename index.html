@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RedPOS - 雲端銷售系統</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'64'%20height%3D'64'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'56'%20height%3D'56'%20rx%3D'14'%20fill%3D'%23ffffff'/%3E%3Ctext%20x%3D'32'%20y%3D'39'%20text-anchor%3D'middle'%20font-family%3D'Noto%20Sans%20TC%2C%20sans-serif'%20font-size%3D'24'%20font-weight%3D'900'%20fill%3D'%23000000'%3Ehs%3C/text%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -28,17 +30,52 @@
                 <h1 class="text-xl font-bold tracking-wider">0423 POS平台</h1>
             </div>
             <div class="flex items-center gap-2">
-                <button id="settings-btn" class="text-xs px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
-                    設置
-                </button>
-                <div id="auth-status" class="text-xs bg-gray-800 px-3 py-1 rounded-full opacity-90">
+                <div id="auth-status" class="text-sm md:text-base bg-gray-800 px-4 py-2 rounded-full opacity-90">
                     正在驗證登入...
                 </div>
-                <button id="logout-btn" class="text-xs px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
-                    登出
+                <button id="settings-btn" class="text-sm md:text-base px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
+                    設置
                 </button>
             </div>
         </header>
+        <div id="profile-popover" class="hidden fixed top-16 right-2 sm:right-4 z-50 sm:w-[320px] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] bg-white rounded-2xl shadow-2xl border border-gray-200">
+            <button id="profile-close-btn" aria-label="關閉" class="absolute right-2 top-2 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-900">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                    <path fill-rule="evenodd" d="M6.72 6.72a.75.75 0 011.06 0L12 10.94l4.22-4.22a.75.75 0 111.06 1.06L13.06 12l4.22 4.22a.75.75 0 11-1.06 1.06L12 13.06l-4.22 4.22a.75.75 0 11-1.06-1.06L10.94 12 6.72 7.78a.75.75 0 010-1.06z" clip-rule="evenodd"/>
+                </svg>
+            </button>
+            <div class="p-4 space-y-4">
+                <div class="text-xs text-gray-500">角色名稱</div>
+                <div id="profile-role" class="text-sm font-bold text-gray-900">-</div>
+                <div class="space-y-2">
+                    <div class="text-xs text-gray-500">大頭照</div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-full bg-gray-200 text-gray-900 font-black flex items-center justify-center overflow-hidden shrink-0">
+                            <img id="profile-avatar-preview" alt="avatar" class="w-full h-full object-cover hidden">
+                            <span id="profile-avatar-fallback">?</span>
+                        </div>
+                        <div class="flex-1">
+                            <input id="profile-avatar-file" type="file" accept="image/*" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:bg-gray-100 file:text-gray-900 file:font-bold hover:file:bg-gray-200 transition-colors">
+                            <input id="profile-avatar-data" type="hidden">
+                            <div class="mt-2">
+                                <button id="profile-avatar-remove" type="button" class="px-3 py-2 rounded-2xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                    移除圖片
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-xs text-gray-500">姓名</div>
+                    <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                </div>
+                <div id="profile-error" class="hidden text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-3"></div>
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button id="profile-save-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">儲存</button>
+                    <button id="profile-logout-btn" class="px-4 py-2 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">登出</button>
+                </div>
+            </div>
+        </div>
 
         <main class="flex flex-1 overflow-hidden flex-col md:flex-row">
             <!-- 左側：商品選擇 -->
@@ -143,7 +180,7 @@
                         <button data-tab="折扣" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">折扣</button>
                         <button data-tab="設定" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50">設定</button>
                     </div>
-                    <div class="flex-1 min-h-0 overflow-auto rounded-3xl border border-gray-200 bg-gray-50 p-6">
+                    <div class="flex-1 min-h-0 overflow-visible rounded-3xl border border-gray-200 bg-gray-50 p-6">
                         <div id="settings-content-title" class="text-lg font-black text-gray-900 sticky top-0 z-20 bg-gray-50">帳號</div>
                         <div id="settings-content" class="text-sm text-gray-700 mt-2 leading-relaxed">此功能尚未建置。</div>
                     </div>
@@ -152,11 +189,22 @@
         </div>
     </div>
 
+    <div id="pwa-install-banner" class="hidden fixed bottom-4 right-4 z-[70]">
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 flex items-center gap-3">
+            <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">安裝應用程式</div>
+                <div class="text-xs text-gray-600 mt-0.5">將 RedPOS 安裝到桌面，獨立視窗使用。</div>
+            </div>
+            <button id="pwa-install-confirm" class="px-3 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors text-sm">安裝</button>
+            <button id="pwa-install-dismiss" class="px-3 py-2 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">稍後</button>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDoc, getDocs, addDoc, serverTimestamp, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAsUkiZlWWfs0719DB7fY8TqR7grQK6uOc",
@@ -168,9 +216,86 @@
             measurementId: "G-27M2GQTTY0"
         };
 
-        const setAuthStatus = (text) => {
+        if ('serviceWorker' in navigator) {
+            try { navigator.serviceWorker.register('./sw.js'); } catch {}
+        }
+        let deferredPWAInstallPrompt = null;
+        const pwaBannerEl = document.getElementById('pwa-install-banner');
+        const pwaInstallBtn = document.getElementById('pwa-install-confirm');
+        const pwaDismissBtn = document.getElementById('pwa-install-dismiss');
+        const installedFlag = () => localStorage.getItem('pwaInstalled') === '1';
+        const dismissedFlag = () => localStorage.getItem('pwaInstallDismissed') === '1';
+        const setInstalled = () => localStorage.setItem('pwaInstalled', '1');
+        const setDismissed = () => localStorage.setItem('pwaInstallDismissed', '1');
+        const isStandalone = () => window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: window-controls-overlay)').matches);
+        const shouldShowPwaBanner = () => !isStandalone() && !installedFlag() && !dismissedFlag() && !!deferredPWAInstallPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPWAInstallPrompt = e;
+            if (shouldShowPwaBanner()) pwaBannerEl.classList.remove('hidden');
+        });
+        window.addEventListener('appinstalled', () => {
+            setInstalled();
+            deferredPWAInstallPrompt = null;
+            pwaBannerEl.classList.add('hidden');
+        });
+        if (pwaInstallBtn) {
+            pwaInstallBtn.addEventListener('click', async () => {
+                if (!deferredPWAInstallPrompt) return;
+                deferredPWAInstallPrompt.prompt();
+                const choice = await deferredPWAInstallPrompt.userChoice.catch(() => null);
+                deferredPWAInstallPrompt = null;
+                if (choice && choice.outcome === 'accepted') {
+                    setInstalled();
+                    pwaBannerEl.classList.add('hidden');
+                } else {
+                    setDismissed();
+                    pwaBannerEl.classList.add('hidden');
+                }
+            });
+        }
+        if (pwaDismissBtn) {
+            pwaDismissBtn.addEventListener('click', () => {
+                setDismissed();
+                pwaBannerEl.classList.add('hidden');
+            });
+        }
+        if (shouldShowPwaBanner()) pwaBannerEl.classList.remove('hidden');
+
+        const setAuthStatus = ({ name, avatarDataUrl }) => {
             const el = document.getElementById('auth-status');
-            if (el) el.innerText = text;
+            if (!el) return;
+
+            el.classList.add('flex', 'items-center', 'gap-2');
+            el.innerHTML = '';
+
+            const avatarWrap = document.createElement('div');
+            avatarWrap.className = 'w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-700 text-white font-black flex items-center justify-center overflow-hidden shrink-0';
+
+            const initial = String(name ?? '').trim().slice(0, 1).toUpperCase() || '?';
+            const fallback = document.createElement('span');
+            fallback.innerText = initial;
+
+            if (avatarDataUrl) {
+                const img = document.createElement('img');
+                img.alt = 'avatar';
+                img.src = avatarDataUrl;
+                img.className = 'w-full h-full object-cover';
+                img.addEventListener('error', () => {
+                    img.remove();
+                    avatarWrap.appendChild(fallback);
+                });
+                avatarWrap.appendChild(img);
+            } else {
+                avatarWrap.appendChild(fallback);
+            }
+
+            const textEl = document.createElement('span');
+            textEl.className = 'truncate';
+            textEl.innerText = `Hi~${String(name ?? '').trim() || '使用者'}`;
+
+            el.appendChild(textEl);
+            el.appendChild(avatarWrap);
         };
 
         const app = initializeApp(firebaseConfig);
@@ -179,6 +304,8 @@
 
         let currentUser = null;
         let confirmResolver = null;
+        let headerAccount = null;
+        let profilePopoverOpen = false;
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -186,17 +313,161 @@
                 return;
             }
             currentUser = user;
-            const label = user.email ? user.email : `ID: ${user.uid.substring(0, 6)}`;
-            setAuthStatus(`已登入 (${label})`);
+            setAuthStatus({ name: user.email ? user.email.split('@')[0] : `ID:${user.uid.substring(0, 6)}`, avatarDataUrl: null });
+            startCategoriesListSync();
+
+            (async () => {
+                try {
+                    const snap = await getDoc(doc(db, 'accounts', user.uid));
+                    if (snap.exists()) {
+                        const data = snap.data() ?? {};
+                        const displayName = String(data.name ?? '').trim() || (user.email ? user.email.split('@')[0] : '');
+                        const avatarDataUrl = String(data.avatarDataUrl ?? '').trim() || null;
+                        setAuthStatus({ name: displayName || '使用者', avatarDataUrl });
+                        headerAccount = { id: user.uid, ...data };
+                        return;
+                    }
+                } catch { }
+
+                const fallbackName = user.displayName || (user.email ? user.email.split('@')[0] : `ID:${user.uid.substring(0, 6)}`);
+                setAuthStatus({ name: fallbackName || '使用者', avatarDataUrl: user.photoURL || null });
+                headerAccount = { id: user.uid, name: fallbackName || '使用者', role: '店員', avatarDataUrl: user.photoURL || null };
+            })();
         });
 
-        document.getElementById('logout-btn').addEventListener('click', async () => {
+        const doLogout = async () => {
             try {
                 await signOut(auth);
             } finally {
                 window.location.replace('./login.html');
             }
+        };
+
+        const authStatusEl = document.getElementById('auth-status');
+        const profilePopover = document.getElementById('profile-popover');
+        const profileRoleEl = document.getElementById('profile-role');
+        const profileAvatarPreview = document.getElementById('profile-avatar-preview');
+        const profileAvatarFallback = document.getElementById('profile-avatar-fallback');
+        const profileAvatarFile = document.getElementById('profile-avatar-file');
+        const profileAvatarData = document.getElementById('profile-avatar-data');
+        const profileAvatarRemove = document.getElementById('profile-avatar-remove');
+        const profileNameEl = document.getElementById('profile-name');
+        const profileSaveBtn = document.getElementById('profile-save-btn');
+        const profileLogoutBtn = document.getElementById('profile-logout-btn');
+        const profileErrorEl = document.getElementById('profile-error');
+        const profileCloseBtn = document.getElementById('profile-close-btn');
+
+        const setProfileAvatarUI = (dataUrl, fallbackText) => {
+            profileAvatarFallback.innerText = (fallbackText || '?').slice(0, 1).toUpperCase();
+            if (dataUrl) {
+                profileAvatarPreview.src = dataUrl;
+                profileAvatarPreview.classList.remove('hidden');
+                profileAvatarFallback.classList.add('hidden');
+            } else {
+                profileAvatarPreview.removeAttribute('src');
+                profileAvatarPreview.classList.add('hidden');
+                profileAvatarFallback.classList.remove('hidden');
+            }
+        };
+
+        const resizeImageToDataUrl = async (file) => {
+            const maxSize = 256;
+            const url = URL.createObjectURL(file);
+            try {
+                const img = await new Promise((resolve, reject) => {
+                    const el = new Image();
+                    el.onload = () => resolve(el);
+                    el.onerror = () => reject(new Error('讀取圖片失敗'));
+                    el.src = url;
+                });
+                const w = img.naturalWidth || img.width;
+                const h = img.naturalHeight || img.height;
+                const scale = Math.min(1, maxSize / Math.max(w, h));
+                const cw = Math.max(1, Math.round(w * scale));
+                const ch = Math.max(1, Math.round(h * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = cw;
+                canvas.height = ch;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) throw new Error('瀏覽器不支援圖片處理');
+                ctx.drawImage(img, 0, 0, cw, ch);
+                try {
+                    return canvas.toDataURL('image/webp', 0.85);
+                } catch {
+                    return canvas.toDataURL('image/jpeg', 0.85);
+                }
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        };
+
+        const openProfilePopover = () => {
+            if (!currentUser) return;
+            const role = headerAccount?.role || '店員';
+            const name = headerAccount?.name || '使用者';
+            const avatar = headerAccount?.avatarDataUrl || null;
+            profileRoleEl.innerText = role;
+            profileNameEl.value = name;
+            profileAvatarData.value = avatar || '';
+            setProfileAvatarUI(profileAvatarData.value, name);
+            profileErrorEl.classList.add('hidden');
+            profileErrorEl.innerText = '';
+            profilePopover.style.display = 'block';
+            profilePopover.classList.remove('hidden');
+            profilePopoverOpen = true;
+        };
+        const closeProfilePopover = () => {
+            profilePopover.classList.add('hidden');
+            profilePopover.style.display = 'none';
+            profilePopoverOpen = false;
+        };
+        const toggleProfilePopover = () => { profilePopoverOpen ? closeProfilePopover() : openProfilePopover(); };
+
+        authStatusEl.addEventListener('click', toggleProfilePopover);
+        if (profileCloseBtn) profileCloseBtn.addEventListener('click', closeProfilePopover);
+        document.addEventListener('click', (e) => {
+            if (!profilePopoverOpen) return;
+            if (e.target === authStatusEl || authStatusEl.contains(e.target)) return;
+            if (e.target === profilePopover || profilePopover.contains(e.target)) return;
+            closeProfilePopover();
         });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && profilePopoverOpen) closeProfilePopover(); });
+
+        profileAvatarFile.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+                const dataUrl = await resizeImageToDataUrl(file);
+                profileAvatarData.value = dataUrl;
+                setProfileAvatarUI(dataUrl, profileNameEl.value || '使用者');
+            } catch (err) {
+                profileErrorEl.classList.remove('hidden');
+                profileErrorEl.innerText = err?.message ?? '圖片處理失敗';
+            }
+        });
+        profileAvatarRemove.addEventListener('click', () => {
+            profileAvatarData.value = '';
+            setProfileAvatarUI('', profileNameEl.value || '使用者');
+            profileAvatarFile.value = '';
+        });
+
+        profileSaveBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            profileErrorEl.classList.add('hidden');
+            profileErrorEl.innerText = '';
+            const name = profileNameEl.value.trim() || '使用者';
+            const avatarDataUrl = profileAvatarData.value.trim() || null;
+            try {
+                await setDoc(doc(db, 'accounts', currentUser.uid), { name, avatarDataUrl, updatedAt: serverTimestamp() }, { merge: true });
+                headerAccount = { ...(headerAccount ?? {}), id: currentUser.uid, name, avatarDataUrl };
+                setAuthStatus({ name, avatarDataUrl });
+                closeProfilePopover();
+            } catch (err) {
+                profileErrorEl.classList.remove('hidden');
+                profileErrorEl.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+            }
+        });
+        profileLogoutBtn.addEventListener('click', doLogout);
 
         const settingsModal = document.getElementById('settings-modal');
         const settingsBtn = document.getElementById('settings-btn');
@@ -258,6 +529,18 @@
                 .replaceAll("'", '&#39;');
         };
 
+        function startCategoriesListSync() {
+            if (categoriesListUnsub) return;
+            categoriesListUnsub = onSnapshot(
+                collection(db, 'categories'),
+                (snapshot) => {
+                    categoriesCache = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    if (typeof renderCategories === 'function') renderCategories();
+                },
+                () => { }
+            );
+        }
+
         const bytesToBase64 = (bytes) => {
             let binary = '';
             const chunkSize = 0x8000;
@@ -285,11 +568,17 @@
         let seededDefaultAccount = false;
         let accountsPermissionDenied = false;
         let categoriesUnsub = null;
+        let categoriesListUnsub = null;
         let categoriesCache = [];
         let categoryEditorMode = 'create';
         let editingCategoryId = null;
         let seededDefaultCategories = false;
         let productsTabCache = null;
+        let brandsUnsub = null;
+        let brandsCache = [];
+        let brandEditorMode = 'create';
+        let editingBrandId = null;
+        let seededDefaultBrands = false;
 
         const renderPlaceholder = (tab) => {
             settingsContentEl.innerHTML = `<div class="text-sm text-gray-700 mt-2 leading-relaxed">此功能尚未建置。</div>`;
@@ -355,25 +644,85 @@
 
             settingsContentEl.innerHTML = `
                 <div class="mt-4 space-y-4">
-                    <div class="text-sm text-gray-600">目前商品清單（自動從前台商品資料產生）</div>
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">目前商品清單（自動從前台商品資料產生）</div>
+                        <button id="product-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增商品
+                        </button>
+                    </div>
                     <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
-                        <div class="overflow-auto">
+                        <div class="overflow-auto max-h-[60vh]">
                             <table class="min-w-[1100px] w-full text-sm">
-                                <thead class="bg-gray-50 text-gray-600">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                                     <tr>
-                                        <th class="text-left font-bold px-4 py-3">編號</th>
-                                        <th class="text-left font-bold px-4 py-3">品牌</th>
-                                        <th class="text-left font-bold px-4 py-3">類別</th>
-                                        <th class="text-left font-bold px-4 py-3">圖片</th>
-                                        <th class="text-left font-bold px-4 py-3">名稱</th>
-                                        <th class="text-left font-bold px-4 py-3">售價</th>
-                                        <th class="text-left font-bold px-4 py-3">成本價</th>
-                                        <th class="text-left font-bold px-4 py-3">底色</th>
-                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">編號</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">品牌</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">類別</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">圖片</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">名稱</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">售價</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">成本價</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">底色</th>
+                                        <th class="sticky top-0 z-10 bg-gray-50 text-left font-bold px-4 py-3">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="products-tbody" class="divide-y divide-gray-100"></tbody>
                             </table>
+                        </div>
+                    </div>
+                    <div id="product-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="product-editor-title" class="font-black tracking-wider">新增商品</div>
+                                <button id="product-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="product-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-name">名稱</label>
+                                        <input id="product-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-category">類別</label>
+                                        <input id="product-category" type="text" list="product-category-list" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                        <datalist id="product-category-list"></datalist>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-brand">品牌</label>
+                                        <input id="product-brand" type="text" list="product-brand-list" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="-">
+                                        <datalist id="product-brand-list"></datalist>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-price">售價</label>
+                                        <input id="product-price" type="number" min="0" step="1" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-cost">成本價</label>
+                                        <input id="product-cost" type="number" min="0" step="1" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-emoji">Emoji</label>
+                                        <input id="product-emoji" type="text" maxlength="2" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="例如：🍔">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="product-bg">底色</label>
+                                        <div class="flex items-center gap-3">
+                                            <input id="product-bg" type="color" class="w-12 h-10 rounded-xl border border-gray-200">
+                                            <input id="product-bg-hex" type="text" class="flex-1 px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all" placeholder="#f3f4f6">
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-2">圖片未上傳時，將以底色+Emoji 作為預覽。</div>
+                                    </div>
+                                </div>
+                                <div id="product-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="product-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="product-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -388,7 +737,7 @@
                     if (!editBtn && !deleteBtn) return;
                     const id = (editBtn ?? deleteBtn).getAttribute('data-id');
                     if (editBtn) {
-                        alert('商品編輯尚未建置。');
+                        void openProductEditor('edit', Number(id));
                         return;
                     }
                     const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除此商品（編號：${id}）嗎？`, okText: '確認', cancelText: '取消' });
@@ -398,7 +747,175 @@
                 });
             }
 
+            const productAddBtn = document.getElementById('product-add-btn');
+            const productEditorModal = document.getElementById('product-editor-modal');
+            const productEditorTitle = document.getElementById('product-editor-title');
+            const productEditorClose = document.getElementById('product-editor-close');
+            const productEditorCancel = document.getElementById('product-editor-cancel');
+            const productEditorForm = document.getElementById('product-editor-form');
+            const productEditorError = document.getElementById('product-editor-error');
+            const nameEl = document.getElementById('product-name');
+            const catEl = document.getElementById('product-category');
+            const brandEl = document.getElementById('product-brand');
+            const catListEl = document.getElementById('product-category-list');
+            const brandListEl = document.getElementById('product-brand-list');
+            const priceEl = document.getElementById('product-price');
+            const costEl = document.getElementById('product-cost');
+            const emojiEl = document.getElementById('product-emoji');
+            const bgEl = document.getElementById('product-bg');
+            const bgHexEl = document.getElementById('product-bg-hex');
+            const submitEl = document.getElementById('product-editor-submit');
+            let productEditorMode = 'add';
+            let editingProductId = null;
+
+            const ensureDropdownCaches = async () => {
+                try {
+                    if (categoriesCache.length === 0) {
+                        const snap = await getDocs(collection(db, 'categories'));
+                        categoriesCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    }
+                } catch { }
+                try {
+                    if (brandsCache.length === 0) {
+                        const snap = await getDocs(collection(db, 'brands'));
+                        brandsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    }
+                } catch { }
+            };
+
+            const renderProductDropdowns = () => {
+                const productCategories = (productsTabCache ?? []).map(p => String(p.category ?? '').trim()).filter(Boolean);
+                const productBrands = (productsTabCache ?? []).map(p => String(p.brand ?? '').trim()).filter(Boolean).filter(b => b !== '-');
+                const categories = Array.from(new Set([
+                    ...categoriesCache.map(c => String(c?.name ?? '').trim()).filter(Boolean),
+                    ...productCategories,
+                ])).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+                const brands = Array.from(new Set([
+                    ...brandsCache.map(b => String(b?.name ?? '').trim()).filter(Boolean),
+                    ...productBrands,
+                ])).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+
+                if (catListEl) {
+                    catListEl.innerHTML = categories.map((name) => `<option value="${escapeHtml(name)}"></option>`).join('');
+                }
+                if (brandListEl) {
+                    brandListEl.innerHTML = brands.map((name) => `<option value="${escapeHtml(name)}"></option>`).join('');
+                }
+            };
+
+            const openProductEditor = async (mode = 'add', id = null) => {
+                productEditorMode = mode;
+                editingProductId = id ?? null;
+                productEditorError.classList.add('hidden');
+                productEditorError.innerText = '';
+
+                if (mode === 'edit' && id != null) {
+                    const product = (productsTabCache ?? []).find(p => String(p.id) === String(id));
+                    productEditorTitle.innerText = '編輯商品';
+                    if (product) {
+                        nameEl.value = String(product.name ?? '');
+                        catEl.value = String(product.category ?? '');
+                        brandEl.value = String(product.brand ?? '');
+                        priceEl.value = product.price != null ? Number(product.price) : '';
+                        costEl.value = product.costPrice != null ? Number(product.costPrice) : '';
+                        emojiEl.value = String(product.emoji ?? '');
+                        const color = String(product.bgColor ?? '#f3f4f6') || '#f3f4f6';
+                        bgEl.value = color;
+                        bgHexEl.value = color;
+                    } else {
+                        productEditorError.classList.remove('hidden');
+                        productEditorError.innerText = '找不到要編輯的商品。';
+                        return;
+                    }
+                } else {
+                    productEditorTitle.innerText = '新增商品';
+                    nameEl.value = '';
+                    catEl.value = '';
+                    brandEl.value = '';
+                    priceEl.value = '';
+                    costEl.value = '';
+                    emojiEl.value = '';
+                    bgEl.value = '#f3f4f6';
+                    bgHexEl.value = '#f3f4f6';
+                }
+
+                productEditorModal.style.display = 'flex';
+                await ensureDropdownCaches();
+                renderProductDropdowns();
+                nameEl.focus();
+            };
+            const closeProductEditor = () => { productEditorModal.style.display = 'none'; };
+
+            productAddBtn?.addEventListener('click', () => { void openProductEditor('add'); });
+            productEditorClose?.addEventListener('click', closeProductEditor);
+            productEditorCancel?.addEventListener('click', closeProductEditor);
+            productEditorModal?.addEventListener('click', (e) => { if (e.target === productEditorModal) closeProductEditor(); });
+            bgEl.addEventListener('input', () => { bgHexEl.value = bgEl.value; });
+            bgHexEl.addEventListener('input', () => {
+                const v = bgHexEl.value.trim();
+                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) bgEl.value = v;
+            });
+
+            productEditorForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (submitEl.disabled) return;
+                productEditorError.classList.add('hidden');
+                productEditorError.innerText = '';
+
+                const name = nameEl.value.trim();
+                const category = catEl.value.trim();
+                const brand = brandEl.value.trim() || '-';
+                const price = Number(priceEl.value);
+                const costPrice = costEl.value ? Number(costEl.value) : null;
+                const emoji = emojiEl.value.trim();
+                const bgColor = bgEl.value || '#f3f4f6';
+
+                if (!name || !category || !(price >= 0)) {
+                    productEditorError.classList.remove('hidden');
+                    productEditorError.innerText = '請確認名稱、類別與售價已正確填寫。';
+                    return;
+                }
+
+                submitEl.disabled = true;
+                const prevText = submitEl.innerText;
+                submitEl.innerText = '儲存中...';
+                submitEl.classList.add('opacity-70');
+
+                try {
+                    if (productEditorMode === 'edit' && editingProductId != null) {
+                        const idx = productsTabCache.findIndex(p => String(p.id) === String(editingProductId));
+                        if (idx === -1) throw new Error('找不到要更新的商品。');
+                        const updated = { ...productsTabCache[idx], name, price, category, brand, costPrice, emoji, bgColor };
+                        productsTabCache[idx] = updated;
+                        if (Array.isArray(PRODUCTS)) {
+                            const pIdx = PRODUCTS.findIndex(p => String(p.id) === String(editingProductId));
+                            if (pIdx !== -1) PRODUCTS[pIdx] = { ...PRODUCTS[pIdx], ...updated };
+                        }
+                    } else {
+                        const maxId = productsTabCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+                        const newId = maxId + 1;
+                        const created = { id: newId, name, price, category, brand, costPrice, emoji, bgColor };
+                        productsTabCache.push(created);
+                        if (Array.isArray(PRODUCTS)) {
+                            PRODUCTS.push(created);
+                        }
+                    }
+                    renderRows();
+                    closeProductEditor();
+                    if (typeof renderCategories === 'function') renderCategories();
+                    if (typeof renderProducts === 'function') renderProducts();
+                } catch (err) {
+                    productEditorError.classList.remove('hidden');
+                    productEditorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                } finally {
+                    submitEl.disabled = false;
+                    submitEl.innerText = prevText;
+                    submitEl.classList.remove('opacity-70');
+                }
+            });
+
             renderRows();
+            void ensureDropdownCaches().finally(renderProductDropdowns);
         };
 
         const getProductCategoryCounts = () => {
@@ -406,6 +923,17 @@
             const counts = new Map();
             list.forEach((p) => {
                 const key = String(p.category ?? '').trim();
+                if (!key) return;
+                counts.set(key, (counts.get(key) ?? 0) + 1);
+            });
+            return counts;
+        };
+
+        const getProductBrandCounts = () => {
+            const list = (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []);
+            const counts = new Map();
+            list.forEach((p) => {
+                const key = String(p.brand ?? '').trim();
                 if (!key) return;
                 counts.set(key, (counts.get(key) ?? 0) + 1);
             });
@@ -425,7 +953,7 @@
                     <div id="categories-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
 
                     <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
-                        <div class="overflow-auto">
+                        <div class="overflow-auto max-h-[60vh]">
                             <table class="min-w-[720px] w-full text-sm">
                                 <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                                     <tr>
@@ -631,6 +1159,322 @@
             }
         };
 
+        const renderBrandsTab = () => {
+            settingsContentEl.innerHTML = `
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-sm text-gray-600">管理產品品牌</div>
+                        <button id="brand-add-btn" class="px-4 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                            新增品牌
+                        </button>
+                    </div>
+
+                    <div id="brands-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+
+                    <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
+                        <div class="overflow-auto max-h-[60vh]">
+                            <table class="min-w-[820px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="text-left font-bold px-4 py-3">LOGO</th>
+                                        <th class="text-left font-bold px-4 py-3">品牌</th>
+                                        <th class="text-left font-bold px-4 py-3">商品數量</th>
+                                        <th class="text-left font-bold px-4 py-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="brands-tbody" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="brand-editor-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[60] p-4">
+                        <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div class="bg-black text-white px-6 py-4 flex items-center justify-between">
+                                <div id="brand-editor-title" class="font-black tracking-wider">新增品牌</div>
+                                <button id="brand-editor-close" class="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm">關閉</button>
+                            </div>
+                            <form id="brand-editor-form" class="p-6 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="brand-name">品牌名稱</label>
+                                        <input id="brand-name" type="text" required class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all">
+                                    </div>
+                                    <div class="sm:row-span-2 sm:col-start-2">
+                                        <label class="block text-sm font-bold text-gray-700 mb-1" for="brand-logo-file">品牌 LOGO</label>
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-14 h-14 rounded-2xl bg-gray-200 text-gray-900 font-black flex items-center justify-center overflow-hidden shrink-0">
+                                                <img id="brand-logo-preview" alt="logo" class="w-full h-full object-cover hidden">
+                                                <span id="brand-logo-fallback">B</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <input id="brand-logo-file" type="file" accept="image/*" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-2xl file:border-0 file:bg-gray-100 file:text-gray-900 file:font-bold hover:file:bg-gray-200 transition-colors">
+                                                <input id="brand-logo-data" type="hidden">
+                                                <div class="mt-2">
+                                                    <button id="brand-logo-remove" type="button" class="px-3 py-2 rounded-2xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                                        移除圖片
+                                                    </button>
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-2">圖片會直接存入資料庫（建議 256×256 以內）。</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="brand-editor-error" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
+                                <div class="flex items-center justify-end gap-3 pt-2">
+                                    <button id="brand-editor-cancel" type="button" class="px-4 py-3 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors">
+                                        取消
+                                    </button>
+                                    <button id="brand-editor-submit" type="submit" class="px-5 py-3 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors">
+                                        儲存
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const noticeEl = document.getElementById('brands-notice');
+            const tbody = document.getElementById('brands-tbody');
+            const brandAddBtn = document.getElementById('brand-add-btn');
+            const editorModal = document.getElementById('brand-editor-modal');
+            const editorTitle = document.getElementById('brand-editor-title');
+            const editorClose = document.getElementById('brand-editor-close');
+            const editorCancel = document.getElementById('brand-editor-cancel');
+            const editorForm = document.getElementById('brand-editor-form');
+            const editorError = document.getElementById('brand-editor-error');
+            const nameEl = document.getElementById('brand-name');
+            const logoFileEl = document.getElementById('brand-logo-file');
+            const logoDataEl = document.getElementById('brand-logo-data');
+            const logoPreviewEl = document.getElementById('brand-logo-preview');
+            const logoFallbackEl = document.getElementById('brand-logo-fallback');
+            const logoRemoveBtn = document.getElementById('brand-logo-remove');
+            const submitBtn = document.getElementById('brand-editor-submit');
+
+            const setLogoUI = (dataUrl, fallbackText) => {
+                logoFallbackEl.innerText = (fallbackText || 'B').slice(0, 1).toUpperCase();
+                if (dataUrl) {
+                    logoPreviewEl.src = dataUrl;
+                    logoPreviewEl.classList.remove('hidden');
+                    logoFallbackEl.classList.add('hidden');
+                    return;
+                }
+                logoPreviewEl.removeAttribute('src');
+                logoPreviewEl.classList.add('hidden');
+                logoFallbackEl.classList.remove('hidden');
+            };
+
+            const resizeLogoToDataUrl = async (file) => {
+                const maxSize = 256;
+                const url = URL.createObjectURL(file);
+                try {
+                    const img = await new Promise((resolve, reject) => {
+                        const el = new Image();
+                        el.onload = () => resolve(el);
+                        el.onerror = () => reject(new Error('讀取圖片失敗'));
+                        el.src = url;
+                    });
+                    const scale = Math.min(1, maxSize / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+                    const targetW = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+                    const targetH = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) throw new Error('瀏覽器不支援圖片處理');
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+                    try {
+                        return canvas.toDataURL('image/webp', 0.85);
+                    } catch {
+                        return canvas.toDataURL('image/jpeg', 0.85);
+                    }
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            };
+
+            logoFileEl.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                    const dataUrl = await resizeLogoToDataUrl(file);
+                    logoDataEl.value = dataUrl;
+                    setLogoUI(dataUrl, nameEl.value || 'B');
+                } catch (err) {
+                    alert(err?.message ?? '圖片處理失敗');
+                }
+            });
+            logoRemoveBtn.addEventListener('click', () => {
+                logoDataEl.value = '';
+                setLogoUI('', nameEl.value || 'B');
+                logoFileEl.value = '';
+            });
+
+            const openEditor = (mode, id) => {
+                brandEditorMode = mode;
+                editingBrandId = id ?? null;
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+                if (mode === 'edit') {
+                    const b = brandsCache.find((x) => x.id === id);
+                    editorTitle.innerText = '編輯品牌';
+                    nameEl.value = b?.name ?? '';
+                    logoDataEl.value = b?.logoDataUrl ?? '';
+                    setLogoUI(logoDataEl.value, b?.name ?? 'B');
+                } else {
+                    editorTitle.innerText = '新增品牌';
+                    nameEl.value = '';
+                    logoDataEl.value = '';
+                    setLogoUI('', 'B');
+                }
+                editorModal.style.display = 'flex';
+                nameEl.focus();
+            };
+            const closeEditor = () => { editorModal.style.display = 'none'; };
+
+            brandAddBtn.addEventListener('click', () => openEditor('create'));
+            editorClose.addEventListener('click', closeEditor);
+            editorCancel.addEventListener('click', closeEditor);
+            editorModal.addEventListener('click', (e) => { if (e.target === editorModal) closeEditor(); });
+
+            const renderRows = () => {
+                const counts = getProductBrandCounts();
+                const namesSet = new Set([
+                    ...Array.from(counts.keys()).map(k => String(k).trim()).filter(Boolean),
+                    ...brandsCache.map(b => String(b.name ?? '').trim()).filter(Boolean),
+                ]);
+                const names = Array.from(namesSet).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+                const rows = names.map((name) => {
+                    const doc = brandsCache.find((b) => String(b.name ?? '').trim() === name);
+                    const count = counts.get(name) ?? 0;
+                    const logo = doc?.logoDataUrl ?? '';
+                    const initial = (name || 'B').slice(0, 1).toUpperCase();
+                    const logoHtml = logo
+                        ? `<img src="${escapeHtml(logo)}" class="w-9 h-9 rounded-2xl object-cover" onerror="this.remove(); this.parentElement.querySelector('[data-fallback]')?.classList.remove('hidden')">`
+                        : '';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <div class="w-9 h-9 rounded-2xl bg-gray-200 text-gray-900 font-black flex items-center justify-center overflow-hidden">
+                                    ${logoHtml}
+                                    <span data-fallback class="${logo ? 'hidden' : ''}">${escapeHtml(initial)}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 font-bold text-gray-900">${escapeHtml(name)}</td>
+                            <td class="px-4 py-3 text-gray-900">${escapeHtml(count)}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button data-action="edit" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-black text-white hover:bg-gray-900 transition-colors"${doc ? '' : ' disabled'}>編輯</button>
+                                    <button data-action="delete" data-id="${doc?.id ?? ''}" data-name="${escapeHtml(name)}" class="px-3 py-1.5 rounded-xl font-bold text-xs border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors"${doc ? '' : ' disabled'}>刪除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                tbody.innerHTML = rows || `
+                    <tr>
+                        <td colspan="4" class="px-4 py-10 text-center text-gray-500">目前沒有品牌資料。</td>
+                    </tr>
+                `;
+            };
+
+            tbody.addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('[data-action="edit"]');
+                const deleteBtn = e.target.closest('[data-action="delete"]');
+                if (!editBtn && !deleteBtn) return;
+                const id = (editBtn ?? deleteBtn).getAttribute('data-id');
+                const name = (editBtn ?? deleteBtn).getAttribute('data-name');
+                if (editBtn) {
+                    if (!id) return;
+                    openEditor('edit', id);
+                    return;
+                }
+                if (!id) return;
+                const ok = await openConfirm({ title: '確認刪除', message: `確定要刪除品牌：${name}？`, okText: '確認', cancelText: '取消' });
+                if (!ok) return;
+                await deleteDoc(doc(db, 'brands', id));
+            });
+
+            editorForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                editorError.classList.add('hidden');
+                editorError.innerText = '';
+                if (submitBtn.disabled) return;
+
+                const name = nameEl.value.trim();
+                const logo = logoDataEl.value.trim();
+                if (!name) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = '請輸入品牌名稱。';
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                const prev = submitBtn.innerText;
+                submitBtn.innerText = '儲存中...';
+                submitBtn.classList.add('opacity-70');
+
+                try {
+                    const payload = { name, logoDataUrl: logo || null, updatedAt: serverTimestamp() };
+                    if (brandEditorMode === 'edit' && editingBrandId) {
+                        await updateDoc(doc(db, 'brands', editingBrandId), payload);
+                    } else {
+                        const id = crypto.randomUUID();
+                        await setDoc(doc(db, 'brands', id), { ...payload, createdAt: serverTimestamp() });
+                    }
+                    closeEditor();
+                } catch (err) {
+                    editorError.classList.remove('hidden');
+                    editorError.innerText = err?.message ?? '儲存失敗，請稍後再試。';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = prev;
+                    submitBtn.classList.remove('opacity-70');
+                }
+            });
+
+            const ensureSeedBrands = async () => {
+                if (seededDefaultBrands) return;
+                if (brandsCache.length > 0) return;
+                const counts = getProductBrandCounts();
+                const defaults = Array.from(counts.keys()).map((n) => String(n).trim()).filter(Boolean);
+                if (!defaults.length) return;
+                seededDefaultBrands = true;
+                try {
+                    await Promise.all(defaults.map((name) => {
+                        const id = crypto.randomUUID();
+                        return setDoc(doc(db, 'brands', id), { name, logoDataUrl: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+                    }));
+                } catch (err) {
+                    seededDefaultBrands = false;
+                }
+            };
+
+            const startBrandsWatch = () => {
+                if (brandsUnsub) return;
+                brandsUnsub = onSnapshot(
+                    collection(db, 'brands'),
+                    async (snapshot) => {
+                        noticeEl.classList.add('hidden');
+                        noticeEl.innerText = '';
+                        brandsCache = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+                        if (brandsCache.length === 0) {
+                            await ensureSeedBrands();
+                        }
+                        renderRows();
+                    },
+                    async (error) => {
+                        brandsCache = [];
+                        noticeEl.classList.remove('hidden');
+                        noticeEl.innerText = `無法讀取品牌資料：${escapeHtml(error?.code ?? error?.message ?? 'unknown error')}`;
+                        renderRows();
+                    }
+                );
+            };
+
+            startBrandsWatch();
+        };
+
         const renderAccountsTab = () => {
             settingsContentEl.innerHTML = `
                 <div class="mt-4 space-y-4">
@@ -644,7 +1488,7 @@
                     <div id="accounts-notice" class="hidden text-sm bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4"></div>
 
                     <div class="rounded-3xl border border-gray-200 bg-white overflow-hidden">
-                        <div class="overflow-auto">
+                        <div class="overflow-auto max-h-[60vh]">
                             <table class="min-w-[1000px] w-full text-sm">
                                 <thead class="bg-gray-50 text-gray-600 sticky top-0 z-10">
                                     <tr>
@@ -1160,22 +2004,31 @@
             settingsContentTitleEl.innerText = tab;
             if (tab === '帳號') {
                 unmountCategoriesTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderAccountsTab();
                 return;
             }
             if (tab === '商品') {
                 unmountAccountsTab();
                 unmountCategoriesTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderProductsTab();
                 return;
             }
             if (tab === '類別') {
                 unmountAccountsTab();
+                if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
                 renderCategoriesTab();
+                return;
+            }
+            if (tab === '品牌') {
+                unmountAccountsTab();
+                renderBrandsTab();
                 return;
             }
             unmountAccountsTab();
             unmountCategoriesTab();
+            if (brandsUnsub) { brandsUnsub(); brandsUnsub = null; }
             renderPlaceholder(tab);
         };
 
@@ -1216,15 +2069,35 @@
 
         // 4. 渲染函式
         function renderCategories() {
-            const cats = ['全部', ...new Set(PRODUCTS.map(p => p.category))];
             const container = document.getElementById('category-list');
-            container.innerHTML = cats.map(cat => `
-                <button onclick="setCategory('${cat}')" 
-                    class="px-5 py-2.5 rounded-full text-base font-bold transition-all whitespace-nowrap
-                    ${currentCategory === cat ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                    ${cat}
-                </button>
-            `).join('');
+            if (!container) return;
+
+            const productCats = PRODUCTS.map(p => String(p.category ?? '').trim()).filter(Boolean);
+            const dbCats = categoriesCache.map(c => String(c?.name ?? '').trim()).filter(Boolean);
+            const cats = [
+                '全部',
+                ...Array.from(new Set([...dbCats, ...productCats])).sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+            ];
+
+            if (!container.dataset.bound) {
+                container.dataset.bound = '1';
+                container.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button[data-cat]');
+                    if (!btn) return;
+                    window.setCategory(btn.getAttribute('data-cat'));
+                });
+            }
+
+            container.innerHTML = cats.map((cat) => {
+                const active = currentCategory === cat;
+                return `
+                    <button data-cat="${escapeHtml(cat)}"
+                        class="px-5 py-2.5 rounded-full text-base font-bold transition-all whitespace-nowrap
+                        ${active ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+                        ${escapeHtml(cat)}
+                    </button>
+                `;
+            }).join('');
         }
 
         function renderProducts() {
