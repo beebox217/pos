@@ -410,8 +410,13 @@
         const dismissedFlag = () => localStorage.getItem('pwaInstallDismissed') === '1';
         const setInstalled = () => localStorage.setItem('pwaInstalled', '1');
         const setDismissed = () => localStorage.setItem('pwaInstallDismissed', '1');
-        const isStandalone = () => window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: window-controls-overlay)').matches);
-        const shouldShowPwaBanner = () => !isStandalone() && !installedFlag() && !dismissedFlag() && !!deferredPWAInstallPrompt;
+        const isStandalone = () => {
+            try {
+                return (typeof navigator !== 'undefined' && 'standalone' in navigator && navigator.standalone) ||
+                    (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: window-controls-overlay)').matches));
+            } catch { return false; }
+        };
+        const shouldShowPwaBanner = () => !installedFlag() && !dismissedFlag() && !!deferredPWAInstallPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPWAInstallPrompt = e;
@@ -551,14 +556,20 @@
                     const manifestLinkId = 'app-manifest';
                     const title = name;
                     const iconSrc = faviconHref || currentLogoSrc;
+                    const basePath = new URL('.', window.location.href).pathname || '/';
+                    const startUrl = basePath;
+                    const scope = basePath;
+                    const id = basePath;
                     const typeMatch = /^data:(image\/[a-zA-Z0-9.+-]+);/.exec(iconSrc);
                     const mime = typeMatch ? typeMatch[1] : 'image/png';
                     const manifest = {
+                        id,
                         name: title,
                         short_name: title,
-                        start_url: '.',
-                        scope: '.',
+                        start_url: startUrl,
+                        scope,
                         display: 'standalone',
+                        display_override: ['standalone'],
                         theme_color: '#000000',
                         background_color: '#ffffff',
                         icons: [
