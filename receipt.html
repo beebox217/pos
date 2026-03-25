@@ -13,8 +13,13 @@
     <div class="min-h-dvh flex items-start justify-center p-4">
         <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
             <div class="bg-black text-white px-6 py-5">
-                <div id="receipt-title" class="font-black tracking-wider text-lg">電子收據 / E-Receipt</div>
-                <div id="receipt-subtitle" class="text-xs opacity-80 mt-1">公開連結（免登入） / Public link (No login required)</div>
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-black w-9 h-9 rounded-lg font-black flex items-center justify-center select-none overflow-hidden">
+                        <img id="receipt-logo-img" alt="logo" class="w-8 h-8 hidden object-cover" onerror="this.classList.add('hidden'); const f=this.parentElement.querySelector('[data-fallback]'); if(f) f.classList.remove('hidden')">
+                        <span id="receipt-logo-fallback" data-fallback class="text-[12px] tracking-wide">POS</span>
+                    </div>
+                    <div id="receipt-title" class="font-black tracking-wider text-lg">電子收據 / E-Receipt</div>
+                </div>
             </div>
             <div class="p-6">
                 <div id="receipt-notice" class="text-sm text-gray-600">載入中... / Loading...</div>
@@ -76,6 +81,8 @@
         };
 
         const titleEl = document.getElementById('receipt-title');
+        const logoImgEl = document.getElementById('receipt-logo-img');
+        const logoFallbackEl = document.getElementById('receipt-logo-fallback');
         const noticeEl = document.getElementById('receipt-notice');
         const bodyEl = document.getElementById('receipt-body');
         const orderIdEl = document.getElementById('receipt-order-id');
@@ -105,6 +112,14 @@
                     if (systemName) {
                         titleEl.innerText = `${systemName}｜電子收據 / E-Receipt`;
                         document.title = `${systemName}｜電子收據 / E-Receipt`;
+                        if (logoFallbackEl) logoFallbackEl.innerText = (systemName.slice(0, 2) || 'POS').toUpperCase();
+                    }
+
+                    const systemLogo = String(data.systemLogoDataUrl ?? '').trim() || '';
+                    if (systemLogo && logoImgEl) {
+                        logoImgEl.src = systemLogo;
+                        logoImgEl.classList.remove('hidden');
+                        logoFallbackEl?.classList.add('hidden');
                     }
 
                     orderIdEl.innerText = orderId;
@@ -115,9 +130,18 @@
                         const name = escapeHtml(String(i?.name ?? ''));
                         const qty = Number(i?.qty ?? 0) || 0;
                         const price = Number(i?.price ?? 0) || 0;
+                        const img = String(i?.imageDataUrl ?? i?.imageUrl ?? '').trim() || '';
+                        const initials = (String(i?.name ?? '').trim().slice(0, 2) || 'NA').toUpperCase();
+                        const thumbSrc = img || systemLogo || '';
+                        const thumb = thumbSrc
+                            ? `<img src="${escapeHtml(thumbSrc)}" alt="${name}" class="w-10 h-10 rounded-xl object-cover">`
+                            : `<div class="w-10 h-10 rounded-xl bg-white text-black border border-gray-200 flex items-center justify-center font-black text-[10px]">${escapeHtml(initials)}</div>`;
                         return `
-                            <div class="flex justify-between">
-                                <span>${name} x ${escapeHtml(qty)}</span>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    ${thumb}
+                                    <span>${name} x ${escapeHtml(qty)}</span>
+                                </div>
                                 <span>$ ${escapeHtml(price * qty)}</span>
                             </div>
                         `;

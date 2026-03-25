@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>0423 POS平台</title>
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="./manifest.webmanifest">
+    <link id="app-manifest" rel="manifest" href="./manifest.webmanifest">
     <link id="app-favicon" rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'64'%20height%3D'64'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'56'%20height%3D'56'%20rx%3D'14'%20fill%3D'%23ffffff'/%3E%3Ctext%20x%3D'32'%20y%3D'39'%20text-anchor%3D'middle'%20font-family%3D'Noto%20Sans%20TC%2C%20sans-serif'%20font-size%3D'24'%20font-weight%3D'900'%20fill%3D'%23000000'%3Ehs%3C/text%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -366,8 +366,8 @@
     <div id="pwa-install-banner" class="hidden fixed bottom-4 right-4 z-[70]">
         <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 flex items-center gap-3">
             <div class="flex-1">
-                <div class="font-bold text-sm text-gray-900">安裝應用程式</div>
-                <div class="text-xs text-gray-600 mt-0.5">將 RedPOS 安裝到桌面，獨立視窗使用。</div>
+                <div class="font-bold text-sm text-gray-900" id="pwa-install-title">安裝應用程式</div>
+                <div class="text-xs text-gray-600 mt-0.5" id="pwa-install-desc">將 應用程式 安裝到桌面，獨立視窗使用。</div>
             </div>
             <button id="pwa-install-confirm" class="px-3 py-2 rounded-2xl font-bold bg-black text-white hover:bg-gray-900 transition-colors text-sm">安裝</button>
             <button id="pwa-install-dismiss" class="px-3 py-2 rounded-2xl font-bold border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 transition-colors text-sm">稍後</button>
@@ -545,6 +545,47 @@
                 document.head.appendChild(faviconEl);
             }
             faviconEl.setAttribute('href', faviconHref);
+
+            const ensureDynamicManifest = () => {
+                try {
+                    const manifestLinkId = 'app-manifest';
+                    const title = name;
+                    const iconSrc = faviconHref || currentLogoSrc;
+                    const typeMatch = /^data:(image\/[a-zA-Z0-9.+-]+);/.exec(iconSrc);
+                    const mime = typeMatch ? typeMatch[1] : 'image/png';
+                    const manifest = {
+                        name: title,
+                        short_name: title,
+                        start_url: '.',
+                        scope: '.',
+                        display: 'standalone',
+                        theme_color: '#000000',
+                        background_color: '#ffffff',
+                        icons: [
+                            { src: iconSrc, sizes: '192x192', type: mime, purpose: 'any maskable' },
+                            { src: iconSrc, sizes: '512x512', type: mime, purpose: 'any maskable' }
+                        ]
+                    };
+                    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                    if (window.__manifestObjectUrl) URL.revokeObjectURL(window.__manifestObjectUrl);
+                    const url = URL.createObjectURL(blob);
+                    window.__manifestObjectUrl = url;
+                    let link = document.getElementById(manifestLinkId);
+                    if (!link) {
+                        link = document.createElement('link');
+                        link.id = manifestLinkId;
+                        link.rel = 'manifest';
+                        document.head.appendChild(link);
+                    }
+                    link.setAttribute('href', url);
+                } catch {}
+            };
+            ensureDynamicManifest();
+
+            const pwaTitleEl = document.getElementById('pwa-install-title');
+            const pwaDescEl = document.getElementById('pwa-install-desc');
+            if (pwaTitleEl) pwaTitleEl.innerText = '安裝應用程式';
+            if (pwaDescEl) pwaDescEl.innerText = `將 ${name} 安裝到桌面，獨立視窗使用。`;
 
             const settingsModalEl = document.getElementById('settings-modal');
             const settingsTitleEl = document.getElementById('settings-content-title');
@@ -4845,16 +4886,21 @@
             const prevText = checkoutConfirmBtn.innerText;
             checkoutConfirmBtn.innerText = '處理中...';
             try {
+                const headerLogoSrc = String(document.getElementById('app-logo-img')?.getAttribute('src') ?? '').trim();
+                const systemLogoDataUrl = headerLogoSrc || (String(appSettingsCache?.logoDataUrl ?? '').trim() || null);
                 const orderItems = cart.map((i) => ({
                     productId: i?.id ?? null,
                     productDocId: i?.docId != null ? String(i.docId) : (i?.productDocId != null ? String(i.productDocId) : null),
                     name: i.name,
                     price: i.price,
-                    qty: i.quantity
+                    qty: i.quantity,
+                    imageDataUrl: i?.imageDataUrl ?? null,
+                    imageUrl: i?.imageUrl ?? null
                 }));
                 const orderData = {
                     items: orderItems,
                     systemName: String(appSettingsCache?.systemName ?? '').trim() || null,
+                    systemLogoDataUrl,
                     subtotal,
                     discountId: discount?.id ?? null,
                     discountName: discount?.name ?? null,
